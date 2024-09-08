@@ -3,8 +3,13 @@
 
 class EngineSettings : public AbstractEngineTab
 {
+	std::vector<std::string> fileList = { "Save" };
+	std::vector<std::string> editList = { "Undo", "Redo" };
+	std::vector<std::string> gameObjectList = { "Add", "Remove" };
+	std::vector<std::string> addList = { "Rectangle" };
 public:
 	void Init(Editor& editor) override;
 	void Update(Editor& editor) override;
+	void createEntity(Editor& editor, const std::string& type);
 };
 

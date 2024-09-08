@@ -139,6 +139,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Assets\MainScripts\Animation.cpp" />
+    <ClCompile Include="Assets\MainScripts\Components.cpp" />
+    <ClCompile Include="Assets\MainScripts\Entity.cpp" />
+    <ClCompile Include="Assets\MainScripts\EntityManager.cpp" />
+    <ClCompile Include="Assets\MainScripts\LightSource.cpp" />
+    <ClCompile Include="Assets\MainScripts\lineSegment.cpp" />
+    <ClCompile Include="Assets\MainScripts\ParticleSystem.cpp" />
+    <ClCompile Include="Assets\MainScripts\Physics.cpp" />
+    <ClCompile Include="Assets\MainScripts\SpartialGrid.cpp" />
+    <ClCompile Include="Assets\MainScripts\Vec2.cpp" />
     <ClCompile Include="Console.cpp" />
     <ClCompile Include="Display.cpp" />
     <ClCompile Include="Editor.cpp" />
@@ -155,6 +165,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AbstractEngineTab.hpp" />
+    <ClInclude Include="Assets\MainScripts\Animation.h" />
+    <ClInclude Include="Assets\MainScripts\Components.h" />
+    <ClInclude Include="Assets\MainScripts\Entity.h" />
+    <ClInclude Include="Assets\MainScripts\EntityManager.h" />
+    <ClInclude Include="Assets\MainScripts\LightSource.h" />
+    <ClInclude Include="Assets\MainScripts\lineSegment.h" />
+    <ClInclude Include="Assets\MainScripts\ParticleSystem.h" />
+    <ClInclude Include="Assets\MainScripts\Physics.h" />
+    <ClInclude Include="Assets\MainScripts\SpartialGrid.h" />
+    <ClInclude Include="Assets\MainScripts\Vec2.h" />
     <ClInclude Include="Console.h" />
     <ClInclude Include="Display.h" />
     <ClInclude Include="Editor.h" />

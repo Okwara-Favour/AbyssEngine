@@ -10,6 +10,7 @@
 #include "Files.h"
 #include "Hierarchy.h"
 #include "Display.h"
+#include "Assets/MainScripts/EntityManager.h"
 
 class Editor
 {
@@ -17,6 +18,8 @@ class Editor
 	sf::RenderWindow* window = nullptr;
 	sf::Clock deltaClock;
 public:
+	std::shared_ptr<Entity> selectedEntity = nullptr;
+	EntityManager entityManager;
 	Editor();
 	Editor(sf::RenderWindow& w);
 	void Init();

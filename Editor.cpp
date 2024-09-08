@@ -41,6 +41,7 @@ void Editor::Update()
 {
 	ImGui::SFML::Update(*window, deltaClock.restart());
 	MainPage();
+	entityManager.update();
 	for (auto& tab : engineTabs)
 	{
 		tab->Update(*this);

@@ -19,6 +19,12 @@
     <Filter Include="Source Files\imgui">
       <UniqueIdentifier>{635b5fe8-575b-4c89-8b58-7e73b3cfa521}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\script">
+      <UniqueIdentifier>{098a4cfa-6bd0-479e-9281-f4830b800a8d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\script">
+      <UniqueIdentifier>{fe65e196-f489-4f2e-bc95-2dc1b440ea0f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -59,6 +65,36 @@
     </ClCompile>
     <ClCompile Include="Display.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\MainScripts\Components.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\MainScripts\Entity.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\MainScripts\EntityManager.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\MainScripts\Vec2.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\MainScripts\Animation.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\MainScripts\LightSource.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\MainScripts\lineSegment.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\MainScripts\ParticleSystem.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\MainScripts\SpartialGrid.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\MainScripts\Physics.cpp">
+      <Filter>Source Files\script</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -112,6 +148,36 @@
     </ClInclude>
     <ClInclude Include="Display.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\MainScripts\Components.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\MainScripts\Entity.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\MainScripts\EntityManager.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\MainScripts\Vec2.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\MainScripts\Animation.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\MainScripts\LightSource.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\MainScripts\lineSegment.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\MainScripts\ParticleSystem.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\MainScripts\SpartialGrid.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\MainScripts\Physics.h">
+      <Filter>Header Files\script</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
