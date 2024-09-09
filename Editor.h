@@ -15,12 +15,12 @@
 
 class Command
 {
-	std::vector<EntityManager> EMHistory;
-	std::vector<EntityManager> EMHistoryRecover;
-	EntityManager EM;
+	std::vector<std::pair<EntityManager, std::shared_ptr<Entity>>> EMHistory;
+	std::vector<std::pair<EntityManager, std::shared_ptr<Entity>>> EMHistoryRecover;
+	std::pair<EntityManager, std::shared_ptr<Entity>> EM;
 	bool check = false;
 public:
-	void Save(EntityManager& em)
+	void Save(EntityManager& em, std::shared_ptr<Entity>& e)
 	{
 		EMHistoryRecover.clear();
 		size_t maxUndoDepth = 20;
@@ -28,35 +28,36 @@ public:
 		{
 			EMHistory.erase(EMHistory.begin());
 		}
-		EMHistory.push_back(em);
+		EMHistory.push_back({ em, (e) ? std::make_shared<Entity>(*e) : nullptr });
 	}
-	void Undo(EntityManager& em)
+	void Undo(EntityManager& em, std::shared_ptr<Entity>& e)
 	{
 		if (!EMHistory.empty())
 		{
 			check = true;
 			EM = EMHistory.back();
-			EMHistoryRecover.push_back(em);
+			EMHistoryRecover.push_back({ em, (e) ? std::make_shared<Entity>(*e) : nullptr });
 			EMHistory.pop_back();
 		}
 	}
 
-	void Redo(EntityManager& em)
+	void Redo(EntityManager& em, std::shared_ptr<Entity>& e)
 	{
 		if (!EMHistoryRecover.empty())
 		{
 			check = true;
 			EM = EMHistoryRecover.back();
-			EMHistory.push_back(em);
+			EMHistory.push_back({ em, (e)? std::make_shared<Entity>(*e) : nullptr});
 			EMHistoryRecover.pop_back();
 		}
 	}
 
-	void Execute(EntityManager& em)
+	void Execute(EntityManager& em, std::shared_ptr<Entity>& e)
 	{
 		if (check)
 		{
-			em = EM;
+			em = EM.first;
+			e = EM.second;
 			check = false;
 		}
 	}
@@ -67,8 +68,8 @@ class Editor
 	std::vector<std::unique_ptr<AbstractEngineTab>> engineTabs;
 	sf::RenderWindow* window = nullptr;
 	sf::Clock deltaClock;
-public:
 	Command command;
+public:
 	std::shared_ptr<Entity> selectedEntity = nullptr;
 	EntityManager entityManager;
 	Editor();
@@ -79,5 +80,8 @@ public:
 	void Close();
 	void MainPage();
 	void Update();
+	void Save();
+	void Undo();
+	void Redo();
 };
 

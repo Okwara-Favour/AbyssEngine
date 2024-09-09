@@ -17,16 +17,9 @@ class CTransform:public Component
 public:
 	Vec2 pos		= { 0, 0 };
 	Vec2 prevPos	= { 0, 0 };
-	Vec2 velocity	= { 0, 0 };
 	Vec2 scale		= { 1, 1 };
 	float angle = 0;
-	float maxSpeed = 0;
-	float speed = 0;
-
-	CTransform();
-	CTransform(const Vec2& p);
-	CTransform(const Vec2& p, const Vec2& v, const Vec2& sc, float a);
-	CTransform(const Vec2& p, const Vec2& v, float a, float ms, float s);
+	CTransform(const Vec2& p = Vec2(0,0), const Vec2& sc = Vec2(1,1), float a = 0);
 };
 
 class CName :public Component
@@ -39,10 +32,10 @@ public:
 
 class CShape :public Component
 {
+	float width = 30, height = 30;
 public:
 	sf::RectangleShape rectangle;
 	CShape();
-	CShape(float width, float height, const sf::Color& fill, const sf::Color& outline, float thickness);
 	CShape(sf::RectangleShape& rect);
 };
 
@@ -57,7 +50,7 @@ public:
 class CSize :public Component
 {
 public:
-	Vec2 size = { 0,0 };
+	Vec2 size = {30, 30 };
 	CSize();
 	CSize(const Vec2& s);
 };

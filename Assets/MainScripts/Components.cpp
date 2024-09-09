@@ -1,24 +1,10 @@
 #include "Components.h"
 
-CTransform::CTransform() {}
-CTransform::CTransform(const Vec2& p)
+CTransform::CTransform(const Vec2& p, const Vec2& sc, float a)
 	:pos(p)
 	,prevPos(p)
-{}
-CTransform::CTransform(const Vec2& p, const Vec2& v, const Vec2& sc, float a)
-	:pos(p)
-	,prevPos(p)
-	,velocity(v)
 	,scale(sc)
 	,angle(a)
-{}
-CTransform::CTransform(const Vec2& p, const Vec2& v, float a, float ms, float s)
-	:pos(p)
-	,prevPos(p)
-	, velocity(v)
-	, angle(a)
-	, maxSpeed(ms)
-	, speed(s)
 {}
 
 CName::CName() {}
@@ -26,13 +12,10 @@ CName::CName(const std::string& n)
 	:name(n)
 {}
 
-CShape::CShape() {}
-CShape::CShape(float width, float height, const sf::Color& fill, const sf::Color& outline, float thickness)
+CShape::CShape()
 	:rectangle(sf::Vector2f(width, height))
 {
-	rectangle.setFillColor(fill);
-	rectangle.setOutlineColor(outline);
-	rectangle.setOutlineThickness(thickness);
+	rectangle.setFillColor(sf::Color::White);
 	rectangle.setOrigin(width/2.0f, height/2.0f);
 }
 CShape::CShape(sf::RectangleShape& rect)

@@ -15,7 +15,7 @@ Editor::Editor(sf::RenderWindow& w) :window(&w)
 	engineTabs.push_back(std::make_unique<Hierarchy>());
 	engineTabs.push_back(std::make_unique<Display>());
 	Init();
-	command.Save(entityManager);
+	command.Save(entityManager, selectedEntity);
 }
 void Editor::Init()
 {
@@ -42,10 +42,26 @@ void Editor::Update()
 {
 	ImGui::SFML::Update(*window, deltaClock.restart());
 	MainPage();
-	command.Execute(entityManager);
+	command.Execute(entityManager, selectedEntity);
 	entityManager.update();
 	for (auto& tab : engineTabs)
 	{
 		tab->Update(*this);
 	}
+}
+
+
+void Editor::Save()
+{
+	command.Save(entityManager, selectedEntity);
+}
+
+void Editor::Undo()
+{
+	command.Undo(entityManager, selectedEntity);
+}
+
+void Editor::Redo()
+{
+	command.Redo(entityManager, selectedEntity);
 }

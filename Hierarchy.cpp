@@ -46,7 +46,7 @@ void Hierarchy::DisplayEntities(Editor& editor)
                 entity->getComponent<CName>().name = name;
                 name = "";
                 editingEntity = nullptr;
-                editor.command.Save(editor.entityManager);
+                editor.Save();
             }
             ImGui::SameLine();
             if (ImGui::Button("Cancel"))
