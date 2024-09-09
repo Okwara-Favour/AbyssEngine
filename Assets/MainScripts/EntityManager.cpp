@@ -103,3 +103,103 @@ void EntityManager::update()
 	m_toDestroy.clear();
 	m_toChangeTag.clear();
 }
+
+void EntityManager::copyEntity(std::shared_ptr<Entity> e, EntityManager& other)
+{
+	auto copyE = std::shared_ptr<Entity>(new Entity(e->id(), e->tag()));
+	copyE->addComponent<CName>(e->getComponent<CName>());
+	copyE->addComponent<CTransform>(e->getComponent<CTransform>());
+	copyE->addComponent<CLifespan>(e->getComponent<CLifespan>());
+	copyE->addComponent<CInput>(e->getComponent<CInput>());
+	copyE->addComponent<CBoundingbox>(e->getComponent<CBoundingbox>());
+	copyE->addComponent<CAnimation>(e->getComponent<CAnimation>());
+	copyE->addComponent<CGravity>(e->getComponent<CGravity>());
+	copyE->addComponent<CState>(e->getComponent<CState>());
+	copyE->addComponent<CSize>(e->getComponent<CSize>());
+	copyE->addComponent<CShape>(e->getComponent<CShape>());
+	copyE->addComponent<CAI>(e->getComponent<CAI>());
+	copyE->addComponent<CTarget>(e->getComponent<CTarget>());
+	copyE->addComponent<CLayer>(e->getComponent<CLayer>());
+	copyE->addComponent<CChildren>(e->getComponent<CChildren>());
+	copyE->addComponent<CParent>(e->getComponent<CParent>());
+	copyE->addComponent<CParticleSystem>(e->getComponent<CParticleSystem>());
+	copyE->addComponent<CLightSource>(e->getComponent<CLightSource>());
+	other.m_entities.push_back(copyE);
+	other.m_uniqueEntityMap[e->tag() + std::to_string(e->id())] = copyE;
+	other.m_entityMap[(e->tag())].push_back(copyE);
+
+	if (std::find(m_toAdd.begin(), m_toAdd.end(), e) != m_toAdd.end())
+	{
+		other.m_toAdd.push_back(copyE);
+	}
+
+	if (std::find(m_toDestroy.begin(), m_toDestroy.end(), e) != m_toDestroy.end())
+	{
+		other.m_toDestroy.push_back(copyE);
+	}
+
+	auto it = std::find_if(m_toChangeTag.begin(), m_toChangeTag.end(),
+		[e](const std::pair<std::shared_ptr<Entity>, std::string>& pair) {
+			return pair.first == e;
+		});
+
+	if (it != m_toChangeTag.end())
+	{
+		other.m_toChangeTag.emplace_back(copyE, it->second);
+	}
+}
+
+void EntityManager::makeCopy(EntityManager& other)
+{
+	for (auto& e : m_entities)
+	{
+		copyEntity(e, other);
+	}
+	other.m_totalEntities = m_totalEntities;
+}
+
+EntityManager& EntityManager::operator=(const EntityManager& other) {
+	if (this != &other) {
+		// Perform deep copying of each vector/map
+		m_entities = deepCopyEntityVec(other.m_entities);
+		m_entityMap = deepCopyEntityMap(other.m_entityMap);
+		m_uniqueEntityMap = deepCopyUniqueEntityMap(other.m_uniqueEntityMap);
+		m_toAdd = deepCopyEntityVec(other.m_toAdd);
+		m_toDestroy = deepCopyEntityVec(other.m_toDestroy);
+		m_toChangeTag = deepCopyEntityStringPair(other.m_toChangeTag);
+		m_totalEntities = other.m_totalEntities;
+	}
+	return *this;
+}
+
+EntityVec EntityManager::deepCopyEntityVec(const EntityVec& vec) {
+	EntityVec result;
+	for (const auto& entity : vec) {
+		result.push_back(std::make_shared<Entity>(*entity));  // Deep copy each entity
+	}
+	return result;
+}
+
+EntityMap EntityManager::deepCopyEntityMap(const EntityMap& map) {
+	EntityMap result;
+	for (const auto& pair : map) {
+		result[pair.first] = deepCopyEntityVec(pair.second);
+	}
+	return result;
+}
+
+UniqueEntityMap EntityManager::deepCopyUniqueEntityMap(const UniqueEntityMap& map) {
+	UniqueEntityMap result;
+	for (const auto& pair : map) {
+		result[pair.first] = std::make_shared<Entity>(*pair.second);  // Deep copy each entity
+	}
+	return result;
+}
+
+EntityStringPair EntityManager::deepCopyEntityStringPair(const EntityStringPair& pairVec) {
+	EntityStringPair result;
+	for (const auto& pair : pairVec) {
+		result.emplace_back(std::make_shared<Entity>(*pair.first), pair.second);  // Deep copy each entity
+	}
+	return result;
+}

@@ -26,6 +26,14 @@ void EngineSettings::Update(Editor& editor)
             {
                 if (ImGui::MenuItem(item.c_str()))
                 {
+                    if (item == "Undo")
+                    {
+                        editor.command.Undo(editor.entityManager);
+                    }
+                    if (item == "Redo")
+                    {
+                        editor.command.Redo(editor.entityManager);
+                    }
                     // Handle edit action selection
                 }
             }
@@ -64,6 +72,7 @@ void EngineSettings::Update(Editor& editor)
 
 void EngineSettings::createEntity(Editor& editor, const std::string& type)
 {
+    editor.command.Save(editor.entityManager);
     if (type == "Rectangle")
     {
         auto rect = editor.entityManager.addEntity("Default");
