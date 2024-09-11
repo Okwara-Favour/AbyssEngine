@@ -126,6 +126,11 @@ bool Vec2::operator == (const Vec2& rhs)
     return (x == rhs.x) && (y == rhs.y);
 }
 
+Vec2 Vec2::abs()
+{
+    return Vec2(std::abs(x), std::abs(y));
+}
+
 Vec2& Vec2::add(const Vec2& v)
 {
     x += v.x;

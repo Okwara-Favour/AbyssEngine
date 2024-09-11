@@ -96,6 +96,9 @@
     <ClCompile Include="Assets\MainScripts\Physics.cpp">
       <Filter>Source Files\script</Filter>
     </ClCompile>
+    <ClCompile Include="RenderModifier.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IMGUI\imconfig.h">
@@ -178,6 +181,9 @@
     </ClInclude>
     <ClInclude Include="Assets\MainScripts\Physics.h">
       <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderModifier.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

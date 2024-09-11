@@ -31,6 +31,7 @@ public:
     void operator /= (float num);
     bool operator != (const Vec2& rhs);
     bool operator == (const Vec2& rhs);
+    Vec2 abs();
     Vec2& add(const Vec2& v);
     Vec2& add(float num);
     Vec2& scale(float s);

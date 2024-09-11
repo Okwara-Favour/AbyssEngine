@@ -162,6 +162,7 @@
     <ClCompile Include="IMGUI\imgui_widgets.cpp" />
     <ClCompile Include="Inspector.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="RenderModifier.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AbstractEngineTab.hpp" />
@@ -191,6 +192,7 @@
     <ClInclude Include="IMGUI\imstb_textedit.h" />
     <ClInclude Include="IMGUI\imstb_truetype.h" />
     <ClInclude Include="Inspector.h" />
+    <ClInclude Include="RenderModifier.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

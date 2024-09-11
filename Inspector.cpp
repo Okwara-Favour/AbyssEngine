@@ -40,6 +40,7 @@ void Inspector::handleTags(Editor& editor)
 
 void Inspector::handleComponents(Editor& editor)
 {
+    ImGui::PushItemWidth(25);
     if (ImGui::BeginCombo("Add Component", " "))
     {
         for (const auto& component : CList)
@@ -49,7 +50,7 @@ void Inspector::handleComponents(Editor& editor)
                 if (component == "Transform") 
                 {
                     editor.Save();
-                    editor.selectedEntity->addComponent<CTransform>();
+                    editor.selectedEntity->addComponent<CTransform>(Vec2(editor.startPosition.x, editor.startPosition.y));
                 }
                 if (component == "Renderer")
                 {
@@ -60,6 +61,29 @@ void Inspector::handleComponents(Editor& editor)
         }
         ImGui::EndCombo();
     }
+
+    ImGui::SameLine();
+    if (ImGui::BeginCombo("Remove Component", " "))
+    {
+        for (const auto& component : CList)
+        {
+            if (ImGui::Selectable(component.c_str()))
+            {
+                if (component == "Transform")
+                {
+                    editor.Save();
+                    editor.selectedEntity->removeComponent<CTransform>();
+                }
+                if (component == "Renderer")
+                {
+                    editor.Save();
+                    editor.selectedEntity->removeComponent<CShape>();
+                }
+            }
+        }
+        ImGui::EndCombo();
+    }
+    ImGui::PopItemWidth();
 }
 
 void Inspector::displayComponents(Editor& editor)
@@ -68,13 +92,13 @@ void Inspector::displayComponents(Editor& editor)
     {
         auto& trans = editor.selectedEntity->getComponent<CTransform>();
         ImGui::Text("Transform");
-        ImGui::Text("px: %f", trans.pos.x);
+        ImGui::InputFloat("px", &trans.pos.x);
         ImGui::SameLine();
-        ImGui::Text("py: %f", trans.pos.y);
-        ImGui::Text("sx: %f", trans.scale.x);
+        ImGui::InputFloat("py", &trans.pos.y);
+        ImGui::InputFloat("sx", &trans.scale.x);
         ImGui::SameLine();
-        ImGui::Text("sy: %f", trans.scale.y);
-        ImGui::Text("a: %f", trans.angle);
+        ImGui::InputFloat("sy", &trans.scale.y);
+        ImGui::InputFloat("a", &trans.angle);
     }
 
     if (editor.selectedEntity->hasComponent<CShape>())

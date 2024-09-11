@@ -11,6 +11,7 @@
 #include "Files.h"
 #include "Hierarchy.h"
 #include "Display.h"
+#include "RenderModifier.h"
 #include "Assets/MainScripts/EntityManager.h"
 
 class Command
@@ -20,68 +21,41 @@ class Command
 	std::pair<EntityManager, std::shared_ptr<Entity>> EM;
 	bool check = false;
 public:
-	void Save(EntityManager& em, std::shared_ptr<Entity>& e)
-	{
-		EMHistoryRecover.clear();
-		size_t maxUndoDepth = 20;
-		if (EMHistory.size() >= maxUndoDepth)
-		{
-			EMHistory.erase(EMHistory.begin());
-		}
-		EMHistory.push_back({ em, (e) ? std::make_shared<Entity>(*e) : nullptr });
-	}
-	void Undo(EntityManager& em, std::shared_ptr<Entity>& e)
-	{
-		if (!EMHistory.empty())
-		{
-			check = true;
-			EM = EMHistory.back();
-			EMHistoryRecover.push_back({ em, (e) ? std::make_shared<Entity>(*e) : nullptr });
-			EMHistory.pop_back();
-		}
-	}
-
-	void Redo(EntityManager& em, std::shared_ptr<Entity>& e)
-	{
-		if (!EMHistoryRecover.empty())
-		{
-			check = true;
-			EM = EMHistoryRecover.back();
-			EMHistory.push_back({ em, (e)? std::make_shared<Entity>(*e) : nullptr});
-			EMHistoryRecover.pop_back();
-		}
-	}
-
-	void Execute(EntityManager& em, std::shared_ptr<Entity>& e)
-	{
-		if (check)
-		{
-			em = EM.first;
-			e = EM.second;
-			check = false;
-		}
-	}
+	void Save(EntityManager& em, std::shared_ptr<Entity>& e);
+	void Undo(EntityManager& em, std::shared_ptr<Entity>& e);
+	void Redo(EntityManager& em, std::shared_ptr<Entity>& e);
+	void Execute(EntityManager& em, std::shared_ptr<Entity>& e);
 };
 
 class Editor
 {
 	std::vector<std::unique_ptr<AbstractEngineTab>> engineTabs;
-	sf::RenderWindow* window = nullptr;
-	sf::Clock deltaClock;
-	Command command;
+	sf::RenderWindow	window;
+	sf::Clock			deltaClock;
+	Command				command;
+	bool				close = false;
+	bool				fullScreen = false;
+	bool				isFullScreen = false;
 public:
+	ImVec2					startPosition;
 	std::shared_ptr<Entity> selectedEntity = nullptr;
-	EntityManager entityManager;
+	EntityManager			entityManager;
 	Editor();
-	Editor(sf::RenderWindow& w);
+	const sf::Vector2u WinSize() { return window.getSize(); }
 	void Init();
 	void ProcessEvent(sf::Event& event);
 	void Render();
-	void Close();
+	void CloseTabs();
 	void MainPage();
 	void Update();
 	void Save();
 	void Undo();
 	void Redo();
+	void Run();
+	void CloseEditor();
+	void ToggleFullScreen();
+	const bool HasClosed() const;
+	const bool FullScreen() const;
+
 };
 

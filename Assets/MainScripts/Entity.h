@@ -40,6 +40,18 @@ class Entity
 	Entity(const size_t& id, const std::string& tag);
 	void			  setTag(const std::string& tag);
 	void			  destroy();
+
+	template <typename C>
+	C& getC()
+	{
+		return std::get<C>(m_components);
+	}
+
+	template <typename C>
+	const C& getC() const
+	{
+		return std::get<C>(m_components);
+	}
 public:
 	size_t			  id()		 const;
 	bool			  isAlive()	 const;
@@ -50,13 +62,13 @@ public:
 	template <typename C>
 	bool hasComponent() const
 	{
-		return getComponent<C>().has;
+		return getC<C>().has;
 	}
 
 	template <typename C, typename... CArgs>
 	C& addComponent(CArgs&&... mArgs)
 	{
-		auto& component = getComponent<C>();
+		auto& component = getC<C>();
 		component = C(std::forward<CArgs>(mArgs)...);
 		component.has = true;
 		return component;
@@ -65,21 +77,21 @@ public:
 	template <typename C>
 	C& getComponent()
 	{
-		return std::get<C>(m_components);
+		if (hasComponent<C>()) return std::get<C>(m_components);
+		else throw std::runtime_error("Component of the requested type is not present.");
 	}
 
 	template <typename C>
 	const C& getComponent() const
 	{
-		return std::get<C>(m_components);
+		if (hasComponent<C>()) return std::get<C>(m_components);
+		else throw std::runtime_error("Component of the requested type is not present.");
 	}
 
 	template <typename C>
 	void removeComponent()
 	{
-		getComponent<C>() = C();
+		getC<C>() = C();
 	}
-
-
 };
 
