@@ -20,7 +20,6 @@ class EntityManager
 	EntityStringPair	m_toChangeTag;
 	size_t				m_totalEntities = 0;
 	void modifyEntityTag(std::shared_ptr<Entity> entity, const std::string& newTag);
-	void copyEntity(std::shared_ptr<Entity> e, EntityManager& other);
 	EntityVec deepCopyEntityVec(const EntityVec& vec);
 	EntityMap deepCopyEntityMap(const EntityMap& map);
 	UniqueEntityMap deepCopyUniqueEntityMap(const UniqueEntityMap& map);
@@ -37,7 +36,6 @@ public:
 	void changeTag(std::shared_ptr<Entity>& e, const std::string& newTag);
 	void destroyEntity(std::shared_ptr<Entity> e);
 	void update();
-	void makeCopy(EntityManager& other);
 
 	EntityManager& operator=(const EntityManager& other);
 };

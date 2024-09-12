@@ -29,7 +29,7 @@ public:
 
 class Editor
 {
-	std::vector<std::unique_ptr<AbstractEngineTab>> engineTabs;
+	std::map<std::string, std::unique_ptr<AbstractEngineTab>> engineTabs;
 	sf::RenderWindow	window;
 	sf::Clock			deltaClock;
 	Command				command;
@@ -56,6 +56,6 @@ public:
 	void ToggleFullScreen();
 	const bool HasClosed() const;
 	const bool FullScreen() const;
-
+	bool isMouseInTab();
 };
 

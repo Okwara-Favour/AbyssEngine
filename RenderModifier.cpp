@@ -11,6 +11,11 @@ void RenderModifier::Update(Editor& editor)
 	{
 		SetTransform(e);
 	}
+
+	if (ImGui::IsKeyPressed(ImGuiKey_E))
+	{
+		if(editor.selectedEntity) editor.selectedEntity->getComponent<CAnimation>();
+	}
 }
 
 void RenderModifier::SetTransform(std::shared_ptr<Entity>& entity)

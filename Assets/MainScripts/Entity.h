@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <tuple>
+#include <typeinfo>
 #include "Components.h"
 
 class EntityManager;
@@ -38,20 +39,10 @@ class Entity
 	ComponentTuple m_components;
 
 	Entity(const size_t& id, const std::string& tag);
+
 	void			  setTag(const std::string& tag);
 	void			  destroy();
 
-	template <typename C>
-	C& getC()
-	{
-		return std::get<C>(m_components);
-	}
-
-	template <typename C>
-	const C& getC() const
-	{
-		return std::get<C>(m_components);
-	}
 public:
 	size_t			  id()		 const;
 	bool			  isAlive()	 const;
@@ -62,13 +53,13 @@ public:
 	template <typename C>
 	bool hasComponent() const
 	{
-		return getC<C>().has;
+		return std::get<C>(m_components).has;
 	}
 
 	template <typename C, typename... CArgs>
 	C& addComponent(CArgs&&... mArgs)
 	{
-		auto& component = getC<C>();
+		auto& component = std::get<C>(m_components);
 		component = C(std::forward<CArgs>(mArgs)...);
 		component.has = true;
 		return component;
@@ -78,20 +69,20 @@ public:
 	C& getComponent()
 	{
 		if (hasComponent<C>()) return std::get<C>(m_components);
-		else throw std::runtime_error("Component of the requested type is not present.");
+		else throw std::runtime_error("Error - Component of type '" + std::string(typeid(C).name()) + "' is not present.");
 	}
 
 	template <typename C>
 	const C& getComponent() const
 	{
 		if (hasComponent<C>()) return std::get<C>(m_components);
-		else throw std::runtime_error("Component of the requested type is not present.");
+		else throw std::runtime_error("Error - Component of type '" + std::string(typeid(C).name()) + "' is not present.");
 	}
 
 	template <typename C>
 	void removeComponent()
 	{
-		getC<C>() = C();
+		std::get<C>(m_components) = C();
 	}
 };
 

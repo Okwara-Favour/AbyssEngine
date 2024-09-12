@@ -5,6 +5,7 @@ class Entity;
 
 class Hierarchy : public AbstractEngineTab
 {
+	std::map<ImGuiKey, std::string> keyAction;
 	std::string name = "";
 	std::shared_ptr<Entity> editingEntity = nullptr;
 public:

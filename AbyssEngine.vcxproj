@@ -128,6 +128,9 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\libraries\SFML-2.6.1\include;$(SolutionDir)\IMGUI\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <EnableModules>
+      </EnableModules>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

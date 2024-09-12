@@ -55,13 +55,14 @@ Editor::Editor()
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable docking
 	ImGuiStyle& style = ImGui::GetStyle();
 	style.Colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
-	engineTabs.push_back(std::make_unique<EngineSettings>());
-	engineTabs.push_back(std::make_unique<Inspector>());
-	engineTabs.push_back(std::make_unique<Files>());
-	engineTabs.push_back(std::make_unique<Console>());
-	engineTabs.push_back(std::make_unique<Hierarchy>());
-	engineTabs.push_back(std::make_unique<Display>());
-	engineTabs.push_back(std::make_unique<RenderModifier>());
+
+	engineTabs["EngineSettings"] = std::make_unique<EngineSettings>();
+	engineTabs["Inspector"] = std::make_unique<Inspector>();
+	engineTabs["Files"] = std::make_unique<Files>();
+	engineTabs["Console"] = std::make_unique<Console>();
+	engineTabs["Hierarchy"] = std::make_unique<Hierarchy>();
+	engineTabs["Display"] = std::make_unique<Display>();
+	engineTabs["RenderModifier"] = std::make_unique<RenderModifier>();
 	Init();
 	command.Save(entityManager, selectedEntity);
 }
@@ -69,12 +70,12 @@ void Editor::Init()
 {
 	for (auto& tab : engineTabs)
 	{
-		tab->Init(*this);
+		tab.second->Init(*this);
 	}
 }
 void Editor::ProcessEvent(sf::Event& event) { ImGui::SFML::ProcessEvent(event); }
 void Editor::Render() { ImGui::SFML::Render(window); }
-void Editor::CloseTabs() { ImGui::SFML::Shutdown(); }
+void Editor::CloseTabs() {	ImGui::SFML::Shutdown(); }
 void Editor::MainPage()
 {
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
@@ -92,9 +93,15 @@ void Editor::Update()
 	MainPage();
 	command.Execute(entityManager, selectedEntity);
 	entityManager.update();
-	for (auto& tab : engineTabs)
+	try
 	{
-		tab->Update(*this);
+		for (auto& tab : engineTabs)
+		{
+			tab.second->Update(*this);
+		}
+	}
+	catch (const std::exception& e) {
+		engineTabs["Console"]->HandleError(e.what());
 	}
 }
 
@@ -102,6 +109,7 @@ void Editor::Update()
 void Editor::Save()
 {
 	command.Save(entityManager, selectedEntity);
+	std::cout << "Save occured" << std::endl;
 }
 
 void Editor::Undo()
@@ -116,6 +124,7 @@ void Editor::Redo()
 
 void Editor::Run()
 {
+	//SetUnhandledExceptionFilter(ExceptionFilter);
 	while (window.isOpen()) {
 		sf::Event event;
 		while (window.pollEvent(event)) {
@@ -148,7 +157,17 @@ void Editor::ToggleFullScreen() { fullScreen = !fullScreen; }
 const bool Editor::HasClosed() const { return close; }
 const bool Editor::FullScreen() const { return fullScreen; }
 
-
+bool Editor::isMouseInTab()
+{
+	auto windowPos = ImGui::GetWindowPos();
+	auto contentMin = ImGui::GetWindowContentRegionMin();
+	auto contentMax = ImGui::GetWindowContentRegionMax();
+	ImVec2 mousePos = ImGui::GetMousePos();
+	ImVec2 windowContentMin = ImVec2(windowPos.x + contentMin.x, windowPos.y + contentMin.y);
+	ImVec2 windowContentMax = ImVec2(windowPos.x + contentMax.x, windowPos.y + contentMax.y);
+	return (mousePos.x >= windowContentMin.x && mousePos.x <= windowContentMax.x &&
+		mousePos.y >= windowContentMin.y && mousePos.y <= windowContentMax.y);
+}
 
 
 

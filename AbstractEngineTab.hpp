@@ -11,4 +11,5 @@ public:
 	virtual ~AbstractEngineTab() = default;
 	virtual void Init(Editor& editor) = 0;
 	virtual void Update(Editor& editor) = 0;
+	virtual void HandleError(const std::string& errorString) {};
 };

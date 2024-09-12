@@ -3,6 +3,8 @@
 
 void Hierarchy::Init(Editor& editor)
 {
+    keyAction[ImGuiKey_Enter] = "ENTER";
+    keyAction[ImGuiKey_Escape] = "ESCAPE";
 }
 void Hierarchy::Update(Editor& editor)
 {
@@ -28,31 +30,40 @@ void Hierarchy::DisplayEntities(Editor& editor)
     for (const auto& entity : entities)
     {
         ImGui::PushID(entity->id());  // Assuming entity has a GetID() method
-        if (ImGui::Selectable(entity->getComponent<CName>().name.c_str(), editor.selectedEntity == entity, ImGuiSelectableFlags_AllowDoubleClick))
+        if (ImGui::Selectable(entity->getComponent<CName>().name.c_str(), editor.selectedEntity && editor.selectedEntity->id() == entity->id(), ImGuiSelectableFlags_AllowDoubleClick))
         {
+            if (editor.selectedEntity && editor.selectedEntity->id() != entity->id()) editor.Save();
             editor.selectedEntity = entity;
             if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
             {
                 name = entity->getComponent<CName>().name;
                 editingEntity = entity;
-                std::cout << editor.selectedEntity->id() << std::endl;
             }
         }
-        if (editingEntity == entity)
+        if (editingEntity && editingEntity->id() == entity->id())
         {
             ImGui::InputText("Rename", &name[0], name.size() + 1);
-            if (ImGui::Button("Save"))
+
+            if (editor.isMouseInTab())
             {
-                entity->getComponent<CName>().name = name;
-                name = "";
-                editingEntity = nullptr;
-                editor.Save();
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Cancel"))
-            {
-                name = "";
-                editingEntity = nullptr;
+                for (auto& key : keyAction)
+                {
+                    if (ImGui::IsKeyPressed(key.first))
+                    {
+                        if (key.second == "ENTER")
+                        {
+                            entity->getComponent<CName>().name = name;
+                            if (name != entity->getComponent<CName>().name) editor.Save();
+                            name = "";
+                            editingEntity = nullptr;
+                        }
+                        if (key.second == "ESCAPE")
+                        {
+                            name = "";
+                            editingEntity = nullptr;
+                        }
+                    }
+                }
             }
         }
         ImGui::PopID();

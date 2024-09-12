@@ -38,7 +38,7 @@ void Display::Update(Editor& editor)
 		ImVec2(contentSize.x, contentSize.y),
 		ImVec2(0, 1), ImVec2(1, 0));
 	displayTexture.display();
-	HandleKeyActions();
+	HandleKeyActions(editor);
 	MenuTab(editor);
 	if (ImGui::IsKeyPressed(ImGuiKey_Space))
 	{
@@ -54,20 +54,20 @@ void Display::EntityMouseDrag(std::shared_ptr<Entity>& entity, Editor& editor)
 	sf::Vector2f scaledPos = sf::Vector2f(mousePosInWindow.x * viewScale.x, mousePosInWindow.y * viewScale.y);
 	sf::Vector2f mouseWorldPos = WorldPos(scaledPos.x, scaledPos.y);
 	
-	if (isMouseInTab())
+	if (editor.isMouseInTab())
 	{
-		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && EntityContainsPos(entity, mouseWorldPos))
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered() && EntityContainsPos(entity, mouseWorldPos))
 		{
 			editor.Save();
 			editor.selectedEntity = entity;
 			entityMouse = true;
 		}
-		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !entityMouse && editor.selectedEntity)
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered() && !entityMouse && editor.selectedEntity)
 		{
 			editor.Save();
 			editor.selectedEntity = nullptr;
 		}
-		if (ImGui::IsMouseDragging(ImGuiMouseButton_Left) && entity == editor.selectedEntity)
+		if (ImGui::IsMouseDragging(ImGuiMouseButton_Left) && editor.selectedEntity && entity->id() == editor.selectedEntity->id())
 		{
 			Vec2 mPos(mouseWorldPos.x, mouseWorldPos.y);
 			Vec2& ePos = entity->getComponent<CTransform>().pos;
@@ -120,9 +120,9 @@ void Display::DisplaySelected(std::shared_ptr<Entity>& entity, std::shared_ptr<E
 	}
 }
 
-void Display::HandleKeyActions()
+void Display::HandleKeyActions(Editor& editor)
 {
-	if (isMouseInTab())
+	if (editor.isMouseInTab())
 	{
 		sf::View view = displayTexture.getView();
 		sf::Vector2f viewVel;
@@ -141,15 +141,6 @@ void Display::HandleKeyActions()
 		view.move(viewVel);
 		displayTexture.setView(view);
 	}
-}
-
-bool Display::isMouseInTab()
-{
-	ImVec2 mousePos = ImGui::GetMousePos();
-	ImVec2 windowContentMin = ImVec2(windowPos.x + contentMin.x, windowPos.y + contentMin.y);
-	ImVec2 windowContentMax = ImVec2(windowPos.x + contentMax.x, windowPos.y + contentMax.y);
-	return (mousePos.x >= windowContentMin.x && mousePos.x <= windowContentMax.x &&
-		mousePos.y >= windowContentMin.y && mousePos.y <= windowContentMax.y);
 }
 
 void Display::MenuTab(Editor& editor)
@@ -184,6 +175,96 @@ void Display::MenuTab(Editor& editor)
 
 		if (ImGui::BeginMenu("Transform"))
 		{
+			bool hasClicked = false;
+			bool hasDeactivated = false;
+			Vec2 vel;
+			Vec2 scale;
+			float angle = 0.0f;
+			if (ImGui::BeginMenu("Factors"))
+			{
+				ImGui::InputFloat("TranslateFactor", &translateFactor);
+				ImGui::InputFloat("ScaleFactor", &scaleFactor);
+				ImGui::InputFloat("RotateFactor", &rotateFactor);
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("Translate"))
+			{
+				if (ImGui::Button("Up"));
+				if (ImGui::IsItemActivated()) hasClicked = true;
+				if (ImGui::IsItemActive())		vel.y = -translateFactor;
+				
+				ImGui::SameLine();
+				if (ImGui::Button("Down"));
+				if (ImGui::IsItemActivated()) hasClicked = true;
+				if (ImGui::IsItemActive())		vel.y =  translateFactor;
+				
+				ImGui::SameLine();
+				if (ImGui::Button("Left"));
+				if (ImGui::IsItemActivated()) hasClicked = true;
+				if (ImGui::IsItemActive())		vel.x = -translateFactor;
+				
+				ImGui::SameLine();
+				if (ImGui::Button("Right"));
+				if (ImGui::IsItemActivated()) hasClicked = true;
+				if (ImGui::IsItemActive())		vel.x =  translateFactor;
+
+				ImGui::SameLine();
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("Scale"))
+			{
+				if (ImGui::Button("ScaleW+"));
+				if (ImGui::IsItemActivated()) hasClicked = true;
+				if (ImGui::IsItemActive())		scale.x =  scaleFactor;
+
+				ImGui::SameLine();
+				if (ImGui::Button("ScaleH+"));
+				if (ImGui::IsItemActivated()) hasClicked = true;
+				if (ImGui::IsItemActive())		scale.y =  scaleFactor;
+
+				if (ImGui::Button("ScaleW-"));
+				if (ImGui::IsItemActivated()) hasClicked = true;
+				if (ImGui::IsItemActive())		scale.x = -scaleFactor;
+				ImGui::SameLine();
+				if (ImGui::Button("ScaleH-"));
+				if (ImGui::IsItemActivated()) hasClicked = true;
+				if (ImGui::IsItemActive())		scale.y = -scaleFactor;
+
+				if (ImGui::Button("Scale+"));
+				if (ImGui::IsItemActivated()) hasClicked = true;
+				if (ImGui::IsItemActive())		scale = Vec2(scaleFactor, scaleFactor);
+
+				ImGui::SameLine();
+				if (ImGui::Button("Scale-"));
+				if (ImGui::IsItemActivated()) hasClicked = true;
+				if (ImGui::IsItemActive())		scale = Vec2(-scaleFactor, -scaleFactor);
+
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("Rotate"))
+			{
+				if (ImGui::Button("Rotate+"));
+				if (ImGui::IsItemActivated()) hasClicked = true;
+				if (ImGui::IsItemActive())		angle = rotateFactor;
+				
+				ImGui::SameLine();
+				if (ImGui::Button("Rotate-"));
+				if (ImGui::IsItemActivated()) hasClicked = true;
+				if (ImGui::IsItemActive())		angle = -rotateFactor;
+				
+				ImGui::EndMenu();
+			}
+			if (editor.selectedEntity && editor.selectedEntity->hasComponent<CTransform>())
+			{
+				auto& Trans = editor.selectedEntity->getComponent<CTransform>();
+				Trans.pos += vel;
+				Trans.scale += scale;
+				Trans.angle += angle;
+			}
+			if (hasClicked)
+			{
+				editor.Save();
+			}
 			ImGui::EndMenu();
 		}
 	}
