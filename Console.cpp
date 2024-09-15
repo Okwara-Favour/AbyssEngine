@@ -15,7 +15,7 @@ void Console::Update(Editor& editor)
 		}
 		if (errorStack.size() > maxError) errorStack.pop_back();
 		ImGui::SameLine();
-		if(!errorStack.empty()) ImGui::Text("Errors: %d", errorStack.size());
+		if(!errorStack.empty()) ImGui::Text("Lines: %d", errorStack.size());
 		for (auto& errorString : errorStack)
 		{
 			ImGui::TextWrapped(errorString.c_str());

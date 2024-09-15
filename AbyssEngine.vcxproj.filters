@@ -25,6 +25,9 @@
     <Filter Include="Source Files\script">
       <UniqueIdentifier>{fe65e196-f489-4f2e-bc95-2dc1b440ea0f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\nfd">
+      <UniqueIdentifier>{edd0c9d7-6e2e-4ad9-ad41-4808f6952554}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -98,6 +101,12 @@
     </ClCompile>
     <ClCompile Include="RenderModifier.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NFD\nfd_win.cpp">
+      <Filter>Source Files\nfd</Filter>
+    </ClCompile>
+    <ClCompile Include="NFD\nfd_common.c">
+      <Filter>Source Files\nfd</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

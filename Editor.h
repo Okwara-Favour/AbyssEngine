@@ -12,7 +12,7 @@
 #include "Hierarchy.h"
 #include "Display.h"
 #include "RenderModifier.h"
-#include "Assets/MainScripts/EntityManager.h"
+#include "Assets/Game/MainScripts/EntityManager.h"
 
 class Command
 {
@@ -27,6 +27,7 @@ public:
 	void Execute(EntityManager& em, std::shared_ptr<Entity>& e);
 };
 
+namespace fs = std::experimental::filesystem;
 class Editor
 {
 	std::map<std::string, std::unique_ptr<AbstractEngineTab>> engineTabs;
@@ -36,6 +37,10 @@ class Editor
 	bool				close = false;
 	bool				fullScreen = false;
 	bool				isFullScreen = false;
+protected:
+	friend Files;
+	friend EngineSettings;
+	fs::path currentDirectory = fs::current_path();
 public:
 	ImVec2					startPosition;
 	std::shared_ptr<Entity> selectedEntity = nullptr;
@@ -52,6 +57,7 @@ public:
 	void Undo();
 	void Redo();
 	void Run();
+	void HandleError(const std::string& error);
 	void CloseEditor();
 	void ToggleFullScreen();
 	const bool HasClosed() const;

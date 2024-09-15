@@ -101,7 +101,7 @@ void Editor::Update()
 		}
 	}
 	catch (const std::exception& e) {
-		engineTabs["Console"]->HandleError(e.what());
+		HandleError(e.what());
 	}
 }
 
@@ -169,5 +169,7 @@ bool Editor::isMouseInTab()
 		mousePos.y >= windowContentMin.y && mousePos.y <= windowContentMax.y);
 }
 
-
-
+void Editor::HandleError(const std::string& error)
+{
+	engineTabs["Console"]->HandleError(error);
+}

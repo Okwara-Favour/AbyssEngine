@@ -1,5 +1,7 @@
 #include "EngineSettings.h"
 #include "Editor.h"
+#include "NFD/include/nfd.h"
+#include <sstream>
 
 void EngineSettings::Init(Editor& editor)
 {
@@ -15,7 +17,10 @@ void EngineSettings::Update(Editor& editor)
             {
                 if (ImGui::MenuItem(item.c_str()))
                 {
-                    // Handle file action selection
+                    if (item == "Import")
+                    {
+                        ImportFiles(editor);
+                    }
                 }
             }
             ImGui::EndMenu();
@@ -102,5 +107,49 @@ void EngineSettings::createEntity(Editor& editor, const std::string& type)
         std::string name = "Rectangle" + std::to_string(entity->id());
         entity->addComponent<CName>(name);
         entity->addComponent<CShape>();
+    }
+}
+
+void EngineSettings::ImportFiles(Editor& editor)
+{
+    nfdchar_t* outPath = nullptr;
+    nfdresult_t result = NFD_OpenDialog(nullptr, nullptr, &outPath); // Open a dialog to choose a file
+    std::stringstream iss;
+    if (result == NFD_OKAY) // If the user selected a file
+    {
+        iss << "User selected file: " << outPath;
+        editor.HandleError(iss.str());
+        iss.str("");
+        // You can use fs to copy the file to the desired directory
+        fs::path sourceFile(outPath);
+        fs::path targetDirectory = editor.currentDirectory; // Your current directory
+
+        try
+        {
+            fs::copy(sourceFile, targetDirectory / sourceFile.filename(),
+                fs::copy_options::overwrite_existing);
+            editor.HandleError("File imported successfully.");
+        }
+        catch (const fs::filesystem_error& e)
+        {
+            iss << "Error copying file: " << e.what();
+            editor.HandleError(iss.str());
+            iss.str("");
+        }
+    }
+    else if (result == NFD_CANCEL) // If the user canceled the file selection
+    {
+        editor.HandleError("User canceled the operation.");
+    }
+    else // If there was an error
+    {
+        iss << "Error: " << NFD_GetError();
+        editor.HandleError(iss.str());
+        iss.str("");
+    }
+    // Free the memory allocated by nfd
+    if (outPath)
+    {
+        free(outPath);
     }
 }

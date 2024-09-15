@@ -9,7 +9,6 @@ void Inspector::Update(Editor& editor)
 {
 	ImGui::Begin("Inspector");
     ImGui::PushItemWidth(100);
-	ImGui::Text("Content of Tab Inspector");
 	if (editor.selectedEntity)
 	{
         handleTags(editor);
@@ -91,19 +90,30 @@ void Inspector::displayComponents(Editor& editor)
     if (editor.selectedEntity->hasComponent<CTransform>())
     {
         auto& trans = editor.selectedEntity->getComponent<CTransform>();
-        ImGui::Text("Transform");
-        ImGui::InputFloat("px", &trans.pos.x);
-        ImGui::SameLine();
-        ImGui::InputFloat("py", &trans.pos.y);
-        ImGui::InputFloat("sx", &trans.scale.x);
-        ImGui::SameLine();
-        ImGui::InputFloat("sy", &trans.scale.y);
-        ImGui::InputFloat("a", &trans.angle);
+
+        if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            auto& trans = editor.selectedEntity->getComponent<CTransform>();
+            ImGui::Text("Position");
+            ImGui::InputFloat("X", &trans.pos.x);
+            ImGui::SameLine();
+            ImGui::InputFloat("Y", &trans.pos.y);
+            ImGui::Separator(); // Adds a horizontal line separator
+            ImGui::Text("Scale");
+            ImGui::InputFloat("X", &trans.scale.x);
+            ImGui::SameLine();
+            ImGui::InputFloat("Y", &trans.scale.y);
+            ImGui::Separator();
+            ImGui::Text("Rotation");
+            ImGui::InputFloat("Angle", &trans.angle);
+        }
     }
 
     if (editor.selectedEntity->hasComponent<CShape>())
     {
-        ImGui::Text("Renderer");
-        ImGui::Text("Nothing to see here yet");
+        if (ImGui::CollapsingHeader("Renderer", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::Text("Nothing to see here yet");
+        }
     }
 }

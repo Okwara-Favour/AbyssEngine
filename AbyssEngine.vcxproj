@@ -76,12 +76,12 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\libraries\SFML-2.6.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Assets\Game\SFML\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\libraries\SFML-2.6.1\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>Assets\Game\SFML\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>sfml-system-d.lib;sfml-graphics-d.lib;sfml-audio-d.lib;sfml-network-d.lib;sfml-window-d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -93,14 +93,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\libraries\SFML-2.6.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Assets\Game\SFML\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\libraries\SFML-2.6.1\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>Assets\Game\SFML\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>sfml-system.lib;sfml-graphics.lib;sfml-audio.lib;sfml-network.lib;sfml-window.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -110,12 +110,12 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\libraries\SFML-2.6.1\include;$(SolutionDir)\IMGUI\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Assets\Game\SFML\include;$(SolutionDir)\IMGUI\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\libraries\SFML-2.6.1\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>Assets\Game\SFML\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>sfml-system-d.lib;sfml-graphics-d.lib;sfml-audio-d.lib;sfml-network-d.lib;sfml-window-d.lib;%(AdditionalDependencies);opengl32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -127,7 +127,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\libraries\SFML-2.6.1\include;$(SolutionDir)\IMGUI\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Assets\Game\SFML\include;$(SolutionDir)\IMGUI\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <EnableModules>
       </EnableModules>
@@ -137,21 +137,22 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>SFML\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>Assets\Game\SFML\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>sfml-system.lib;sfml-graphics.lib;sfml-audio.lib;sfml-network.lib;sfml-window.lib;%(AdditionalDependencies);opengl32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Assets\MainScripts\Animation.cpp" />
-    <ClCompile Include="Assets\MainScripts\Components.cpp" />
-    <ClCompile Include="Assets\MainScripts\Entity.cpp" />
-    <ClCompile Include="Assets\MainScripts\EntityManager.cpp" />
-    <ClCompile Include="Assets\MainScripts\LightSource.cpp" />
-    <ClCompile Include="Assets\MainScripts\lineSegment.cpp" />
-    <ClCompile Include="Assets\MainScripts\ParticleSystem.cpp" />
-    <ClCompile Include="Assets\MainScripts\Physics.cpp" />
-    <ClCompile Include="Assets\MainScripts\SpartialGrid.cpp" />
-    <ClCompile Include="Assets\MainScripts\Vec2.cpp" />
+    <ClCompile Include="Assets\Game\MainScripts\Animation.cpp" />
+    <ClCompile Include="Assets\Game\MainScripts\Components.cpp" />
+    <ClCompile Include="Assets\Game\MainScripts\Entity.cpp" />
+    <ClCompile Include="Assets\Game\MainScripts\EntityManager.cpp" />
+    <ClCompile Include="Assets\Game\MainScripts\Grid.cpp" />
+    <ClCompile Include="Assets\Game\MainScripts\LightSource.cpp" />
+    <ClCompile Include="Assets\Game\MainScripts\lineSegment.cpp" />
+    <ClCompile Include="Assets\Game\MainScripts\ParticleSystem.cpp" />
+    <ClCompile Include="Assets\Game\MainScripts\Physics.cpp" />
+    <ClCompile Include="Assets\Game\MainScripts\SpartialGrid.cpp" />
+    <ClCompile Include="Assets\Game\MainScripts\Vec2.cpp" />
     <ClCompile Include="Console.cpp" />
     <ClCompile Include="Display.cpp" />
     <ClCompile Include="Editor.cpp" />
@@ -165,20 +166,23 @@
     <ClCompile Include="IMGUI\imgui_widgets.cpp" />
     <ClCompile Include="Inspector.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="NFD\nfd_common.c" />
+    <ClCompile Include="NFD\nfd_win.cpp" />
     <ClCompile Include="RenderModifier.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AbstractEngineTab.hpp" />
-    <ClInclude Include="Assets\MainScripts\Animation.h" />
-    <ClInclude Include="Assets\MainScripts\Components.h" />
-    <ClInclude Include="Assets\MainScripts\Entity.h" />
-    <ClInclude Include="Assets\MainScripts\EntityManager.h" />
-    <ClInclude Include="Assets\MainScripts\LightSource.h" />
-    <ClInclude Include="Assets\MainScripts\lineSegment.h" />
-    <ClInclude Include="Assets\MainScripts\ParticleSystem.h" />
-    <ClInclude Include="Assets\MainScripts\Physics.h" />
-    <ClInclude Include="Assets\MainScripts\SpartialGrid.h" />
-    <ClInclude Include="Assets\MainScripts\Vec2.h" />
+    <ClInclude Include="Assets\Game\MainScripts\Animation.h" />
+    <ClInclude Include="Assets\Game\MainScripts\Components.h" />
+    <ClInclude Include="Assets\Game\MainScripts\Entity.h" />
+    <ClInclude Include="Assets\Game\MainScripts\EntityManager.h" />
+    <ClInclude Include="Assets\Game\MainScripts\Grid.h" />
+    <ClInclude Include="Assets\Game\MainScripts\LightSource.h" />
+    <ClInclude Include="Assets\Game\MainScripts\lineSegment.h" />
+    <ClInclude Include="Assets\Game\MainScripts\ParticleSystem.h" />
+    <ClInclude Include="Assets\Game\MainScripts\Physics.h" />
+    <ClInclude Include="Assets\Game\MainScripts\SpartialGrid.h" />
+    <ClInclude Include="Assets\Game\MainScripts\Vec2.h" />
     <ClInclude Include="Console.h" />
     <ClInclude Include="Display.h" />
     <ClInclude Include="Editor.h" />
