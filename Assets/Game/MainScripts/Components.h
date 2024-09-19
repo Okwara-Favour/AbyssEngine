@@ -30,13 +30,22 @@ public:
 	CName(const std::string& n);
 };
 
-class CShape :public Component
+class CRectangleShape :public Component
 {
 	float width = 30, height = 30;
 public:
 	sf::RectangleShape rectangle;
-	CShape();
-	CShape(sf::RectangleShape& rect);
+	CRectangleShape();
+	CRectangleShape(sf::RectangleShape& rect);
+};
+
+class CCircleShape :public Component
+{
+	float radius = 15;
+public:
+	sf::CircleShape circle;
+	CCircleShape();
+	CCircleShape(sf::CircleShape& cir);
 };
 
 class CCollision :public Component
@@ -122,7 +131,7 @@ public:
 	int index = 0;
 	bool repeat = false;
 	CAnimation();
-	CAnimation(const Animation& anim, bool r, int i = 0);
+	CAnimation(const Animation& anim, bool r = false, int i = 0);
 };
 
 class CAI : public Component

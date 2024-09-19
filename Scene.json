@@ -1,0 +1,116 @@
+{
+    "ANIMATION": [
+        [
+            {
+                "FRAMECOUNT": 1,
+                "NAME": "Plea",
+                "SPEED": 0,
+                "TEXTURE": "E&DPlayer.png"
+            },
+            {
+                "FRAMECOUNT": 30,
+                "NAME": "PleaIdle",
+                "SPEED": 1,
+                "TEXTURE": "PleeWalk.png"
+            },
+            {
+                "FRAMECOUNT": 30,
+                "NAME": "PleaIdle2",
+                "SPEED": 1,
+                "TEXTURE": "PleeIdle.png"
+            },
+            {
+                "FRAMECOUNT": 1,
+                "NAME": "default_circle",
+                "SPEED": 0,
+                "TEXTURE": "none"
+            },
+            {
+                "FRAMECOUNT": 1,
+                "NAME": "default_rectangle",
+                "SPEED": 0,
+                "TEXTURE": "none"
+            }
+        ]
+    ],
+    "ENTITY": [
+        [
+            {
+                "NAME": "Rectangle0",
+                "PX": 347.0,
+                "PY": 377.0,
+                "R": 0.0,
+                "RENDER": "PleaIdle2",
+                "SX": 1.0,
+                "SY": 1.0,
+                "TAG": "Default"
+            },
+            {
+                "NAME": "Rectangle1",
+                "PX": 488.0,
+                "PY": 153.0,
+                "R": 0.0,
+                "RENDER": "Rectangle",
+                "SX": 1.0,
+                "SY": 1.0,
+                "TAG": "Default"
+            },
+            {
+                "NAME": "Rectangle2",
+                "PX": 702.0,
+                "PY": 192.0,
+                "R": 0.0,
+                "RENDER": "Rectangle",
+                "SX": 1.0,
+                "SY": 1.0,
+                "TAG": "Default"
+            },
+            {
+                "NAME": "Rectangle3",
+                "PX": 891.0,
+                "PY": 300.0,
+                "R": 0.0,
+                "RENDER": "Rectangle",
+                "SX": 1.0,
+                "SY": 1.0,
+                "TAG": "Default"
+            },
+            {
+                "NAME": "Rectangle4",
+                "PX": 678.0,
+                "PY": 542.0,
+                "R": 0.0,
+                "RENDER": "Rectangle",
+                "SX": 1.0,
+                "SY": 1.0,
+                "TAG": "Default"
+            }
+        ]
+    ],
+    "GLOBAL": [
+        [
+            {
+                "DURATION": 0.25,
+                "ROTATE_FACTOR": 0.5,
+                "SCALE_FACTOR": 0.5,
+                "TRANSLATE_FACTOR": 1.0
+            }
+        ]
+    ],
+    "TEXTURE": [
+        [
+            {
+                "NAME": "E&DPlayer.png",
+                "PATH": "C:\\Users\\Emmanuel-Okwara\\Documents\\Acoding\\Cplus\\Engine\\AbyssEngine\\Assets\\ATest\\E&DPlayer.png"
+            },
+            {
+                "NAME": "PleeIdle.png",
+                "PATH": "C:\\Users\\Emmanuel-Okwara\\Documents\\Acoding\\Cplus\\Engine\\AbyssEngine\\Assets\\Game\\Textures\\Plee\\PleeIdle.png"
+            },
+            {
+                "NAME": "PleeWalk.png",
+                "PATH": "C:\\Users\\Emmanuel-Okwara\\Documents\\Acoding\\Cplus\\Engine\\AbyssEngine\\Assets\\Game\\Textures\\Plee\\PleeWalk.png"
+            }
+        ]
+    ]
+}

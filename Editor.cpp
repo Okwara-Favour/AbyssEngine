@@ -17,6 +17,7 @@ void Command::Undo(EntityManager& em, std::shared_ptr<Entity>& e)
 		check = true;
 		EM = EMHistory.back();
 		EMHistoryRecover.push_back({ em, (e) ? std::make_shared<Entity>(*e) : nullptr });
+		e = EM.second;
 		EMHistory.pop_back();
 	}
 }
@@ -28,6 +29,7 @@ void Command::Redo(EntityManager& em, std::shared_ptr<Entity>& e)
 		check = true;
 		EM = EMHistoryRecover.back();
 		EMHistory.push_back({ em, (e) ? std::make_shared<Entity>(*e) : nullptr });
+		e = EM.second;
 		EMHistoryRecover.pop_back();
 	}
 }
@@ -40,6 +42,15 @@ void Command::Execute(EntityManager& em, std::shared_ptr<Entity>& e)
 		e = EM.second;
 		check = false;
 	}
+}
+
+void Command::Clear()
+{
+	EMHistory.clear();
+	EMHistoryRecover.clear();
+	EM.first = EntityManager();
+	EM.second = nullptr;
+	check = false;
 }
 
 
@@ -93,6 +104,7 @@ void Editor::Update()
 	MainPage();
 	command.Execute(entityManager, selectedEntity);
 	entityManager.update();
+	updateAnimation();
 	try
 	{
 		for (auto& tab : engineTabs)
@@ -145,6 +157,7 @@ void Editor::Run()
 			isFullScreen = true;
 		}
 		// Render
+		LoadScene();
 		Update();
 		window.clear();
 		Render();
@@ -172,4 +185,223 @@ bool Editor::isMouseInTab()
 void Editor::HandleError(const std::string& error)
 {
 	engineTabs["Console"]->HandleError(error);
+}
+
+void Editor::addAnimation(const Animation& anim)
+{
+	anim_toAdd.push_back(anim);
+}
+void Editor::removeAnimation(const Animation& anim)
+{
+	anim_toRemove.push_back(anim);
+}
+void Editor::updateAnimation()
+{
+	for (auto& a : anim_toAdd)
+	{
+		if (animationMap.find(a.getName()) == animationMap.end())
+		{
+			animationMap[a.getName()] = a;
+		}
+	}
+
+	for (auto& a : anim_toRemove)
+	{
+		if (animationMap.find(a.getName()) != animationMap.end())
+		{
+			animationMap.erase(a.getName());
+		}
+	}
+	anim_toAdd.clear();
+	anim_toRemove.clear();
+}
+
+void Editor::SaveScene()
+{
+	nlohmann::json SceneCollection;
+
+	std::vector<nlohmann::json> entityRecord;
+	std::vector<nlohmann::json> textureRecord;
+	std::vector<nlohmann::json> animationRecord;
+	std::vector<nlohmann::json> globalRecord;
+
+	nlohmann::json globalField;
+	globalField["DURATION"] = duration;
+	globalField["TRANSLATE_FACTOR"] = translateFactor;
+	globalField["SCALE_FACTOR"] = scaleFactor;
+	globalField["ROTATE_FACTOR"] = rotateFactor;
+	globalRecord.push_back(globalField);
+
+	SceneCollection["GLOBAL"] += globalRecord;
+
+	for (auto& t : texturePathMap)
+	{
+		nlohmann::json textureField;
+		textureField["NAME"] = t.first;
+		textureField["PATH"] = t.second;
+		textureRecord.push_back(textureField);
+	}
+
+	SceneCollection["TEXTURE"] += textureRecord;
+
+	for (auto& a : animationMap)
+	{
+		nlohmann::json animationField;
+		animationField["NAME"] = a.first;
+		animationField["TEXTURE"] = a.second.getTexName();
+		animationField["FRAMECOUNT"] = a.second.getFrameCount();
+		animationField["SPEED"] = a.second.getSpeed();
+		animationRecord.push_back(animationField);
+	}
+
+	SceneCollection["ANIMATION"] += animationRecord;
+
+	for (auto& e : entityManager.getEntities())
+	{
+		nlohmann::json entityField;
+		entityField["TAG"] = e->tag();
+		if (e->hasComponent<CTransform>())
+		{
+			auto& trans = e->getComponent<CTransform>();
+			entityField["PX"] = trans.pos.x;
+			entityField["PY"] = trans.pos.y;
+			entityField["SX"] = trans.scale.x;
+			entityField["SY"] = trans.scale.y;
+			entityField["R"] = trans.angle;
+		}
+		if (e->hasComponent<CName>())
+		{
+			entityField["NAME"] = e->getComponent<CName>().name;
+		}
+		else {
+			entityField["NAME"] = "Unnamed";
+		}
+		if (e->hasComponent<CRectangleShape>())
+		{
+			entityField["RENDER"] = "Rectangle";
+		}
+		else if (e->hasComponent<CCircleShape>())
+		{
+			entityField["RENDER"] = "Circle";
+		}
+		else if (e->hasComponent<CAnimation>())
+		{
+			entityField["RENDER"] = e->getComponent<CAnimation>().animation.getName();
+		}
+		else {
+			entityField["RENDER"] = "None";
+		}
+		entityRecord.push_back(entityField);
+	}
+	SceneCollection["ENTITY"] += entityRecord;
+	std::cout << SceneCollection.dump(4) << std::endl;
+
+	std::ofstream outFile("Scene.json");
+	if (outFile.is_open())
+	{
+		outFile << SceneCollection.dump(4); // Pretty print with 4 spaces
+		outFile.close();
+	}
+	else
+	{
+		HandleError("Failed to open file for writing");
+	}
+}
+
+void Editor::LoadScene()
+{
+	if (!load) return;
+
+	nlohmann::json SceneCollection;
+
+	// Open and read the JSON file
+	std::ifstream inFile("Scene.json");
+	if (inFile.is_open())
+	{
+		inFile >> SceneCollection;
+		inFile.close();
+	}
+	else
+	{
+		HandleError("Failed to open file for reading");
+		return;
+	}
+
+	command.Clear();
+	selectedEntity = nullptr;
+	
+	if (SceneCollection.contains("GLOBAL"))
+	{
+		auto globalRecord = SceneCollection["GLOBAL"];
+		//std::cout << globalRecord << std::endl;
+		if (!globalRecord.empty())
+		{
+			duration = globalRecord[0][0]["DURATION"].get<float>();
+			translateFactor = globalRecord[0][0]["TRANSLATE_FACTOR"].get<float>();
+			scaleFactor = globalRecord[0][0]["SCALE_FACTOR"].get<float>();
+			rotateFactor = globalRecord[0][0]["ROTATE_FACTOR"].get<float>();
+		}
+	}
+
+	// Process TEXTURE
+	texturePathMap.clear();
+	textureMap.clear();
+	if (SceneCollection.contains("TEXTURE"))
+	{
+		//std::cout << SceneCollection["TEXTURE"][0] << std::endl;
+		for (const auto& textureField : SceneCollection["TEXTURE"][0])
+		{
+			std::string name = textureField["NAME"].get<std::string>();
+			std::string path = textureField["PATH"].get<std::string>();
+			texturePathMap[name] = path;
+			sf::Texture texture;
+			texture.loadFromFile(path);
+			textureMap[name] = texture; // Load or process texture as needed
+		}
+	}
+
+	// Process ANIMATION
+	animationMap.clear();
+	if (SceneCollection.contains("ANIMATION"))
+	{
+		//std::cout << SceneCollection["ANIMATION"][0] << std::endl;
+		for (const auto& animationField : SceneCollection["ANIMATION"][0])
+		{
+			std::string name = animationField["NAME"].get<std::string>();
+			if (name == "default_rectangle" || name == "default_circle")
+			{
+				animationMap[name] = Animation();
+			}
+			else
+			{
+				std::string texName = animationField["TEXTURE"].get<std::string>();
+				int framecount = animationField["FRAMECOUNT"].get<int>();
+				int speed = animationField["SPEED"].get<int>();
+				Animation anim(name, texName, textureMap[texName], framecount, speed);
+				animationMap[name] = anim;
+			}
+		}
+	}
+	
+	entityManager = EntityManager();
+	if (SceneCollection.contains("ENTITY"))
+	{
+		//std::cout << SceneCollection["ENTITY"][0] << std::endl;
+		for (const auto& entityField : SceneCollection["ENTITY"][0])
+		{
+			auto entity = entityManager.addEntity(entityField["TAG"].get<std::string>());
+			entity->addComponent<CName>(entityField["NAME"].get<std::string>());
+			Vec2 pos(entityField["PX"].get<float>(), entityField["PY"].get<float>());
+			Vec2 scale(entityField["SX"].get<float>(), entityField["SY"].get<float>());
+			float angle = entityField["R"].get<float>();
+			entity->addComponent<CTransform>(pos, scale, angle);
+			entity->addComponent<CSize>();
+			std::string renderName = entityField["RENDER"].get<std::string>();
+			if (renderName == "Rectangle") entity->addComponent<CRectangleShape>();
+			if (renderName == "Circle") entity->addComponent<CCircleShape>();
+			if (renderName != "Circle" && renderName != "Rectangle") entity->addComponent<CAnimation>(animationMap[renderName]);
+		}
+	}
+	
+	load = false;
 }

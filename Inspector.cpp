@@ -3,7 +3,8 @@
 
 void Inspector::Init(Editor& editor)
 {
-
+    editor.animationMap["default_rectangle"];
+    editor.animationMap["default_circle"];
 }
 void Inspector::Update(Editor& editor)
 {
@@ -17,6 +18,17 @@ void Inspector::Update(Editor& editor)
 	}
     ImGui::PopItemWidth();
 	ImGui::End();
+
+    if (ImGui::IsKeyPressed(ImGuiKey_E))
+    {
+        editor.HandleError(std::to_string(editor.animationMap.size()));
+        /*
+        * for (auto& e : textureMap)
+        {
+            editor.HandleError(e.first);
+        }
+        */
+    }
 }
 
 void Inspector::handleTags(Editor& editor)
@@ -54,7 +66,7 @@ void Inspector::handleComponents(Editor& editor)
                 if (component == "Renderer")
                 {
                     editor.Save();
-                    editor.selectedEntity->addComponent<CShape>();
+                    editor.selectedEntity->addComponent<CRectangleShape>();
                 }
             }
         }
@@ -76,7 +88,9 @@ void Inspector::handleComponents(Editor& editor)
                 if (component == "Renderer")
                 {
                     editor.Save();
-                    editor.selectedEntity->removeComponent<CShape>();
+                    if (editor.selectedEntity->hasComponent<CRectangleShape>()) editor.selectedEntity->removeComponent<CRectangleShape>();
+                    if (editor.selectedEntity->hasComponent<CCircleShape>())editor.selectedEntity->removeComponent<CCircleShape>();
+                    if (editor.selectedEntity->hasComponent<CAnimation>())editor.selectedEntity->removeComponent<CAnimation>();
                 }
             }
         }
@@ -95,25 +109,62 @@ void Inspector::displayComponents(Editor& editor)
         {
             auto& trans = editor.selectedEntity->getComponent<CTransform>();
             ImGui::Text("Position");
-            ImGui::InputFloat("X", &trans.pos.x);
+            ImGui::InputFloat("PX", &trans.pos.x);
             ImGui::SameLine();
-            ImGui::InputFloat("Y", &trans.pos.y);
+            ImGui::InputFloat("PY", &trans.pos.y);
             ImGui::Separator(); // Adds a horizontal line separator
             ImGui::Text("Scale");
-            ImGui::InputFloat("X", &trans.scale.x);
+            ImGui::InputFloat("SX", &trans.scale.x);
             ImGui::SameLine();
-            ImGui::InputFloat("Y", &trans.scale.y);
+            ImGui::InputFloat("SY", &trans.scale.y);
             ImGui::Separator();
             ImGui::Text("Rotation");
             ImGui::InputFloat("Angle", &trans.angle);
         }
     }
 
-    if (editor.selectedEntity->hasComponent<CShape>())
+    if (editor.selectedEntity->hasComponent<CRectangleShape>() || editor.selectedEntity->hasComponent<CCircleShape>()
+        || editor.selectedEntity->hasComponent<CAnimation>())
     {
         if (ImGui::CollapsingHeader("Renderer", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::Text("Nothing to see here yet");
+            std::string modelName = "None";
+            if (editor.selectedEntity)
+            {
+                if (editor.selectedEntity->hasComponent<CRectangleShape>()) modelName = "default_rectangle";
+                if (editor.selectedEntity->hasComponent<CCircleShape>()) modelName = "default_circle";
+                if (editor.selectedEntity->hasComponent<CAnimation>()) modelName = editor.selectedEntity->getComponent<CAnimation>().animation.getName();
+            }
+            if (ImGui::BeginCombo("Model", modelName.c_str()))
+            {
+                for (const auto& model : editor.animationMap)
+                {
+                    
+                    if (ImGui::Selectable(model.first.c_str()))
+                    {
+                        if (model.first == "default_rectangle")
+                        {
+                            if (modelName != "default_rectangle") editor.Save(), editor.selectedEntity->addComponent<CRectangleShape>();
+                            if (modelName == "default_circle")  editor.selectedEntity->removeComponent<CCircleShape>();
+                            if (modelName != "default_circle" && modelName != "default_rectangle") editor.selectedEntity->removeComponent<CAnimation>(); 
+                        }
+                        else if (model.first == "default_circle")
+                        {
+                            if (modelName != "default_circle") editor.Save(), editor.selectedEntity->addComponent<CCircleShape>();
+                            if (modelName == "default_rectangle") editor.selectedEntity->removeComponent<CRectangleShape>();
+                            if (modelName != "default_circle" && modelName != "default_rectangle") editor.selectedEntity->removeComponent<CAnimation>();
+                        }
+                        else
+                        {
+                            if (modelName != model.second.getName()) editor.Save(), editor.selectedEntity->addComponent<CAnimation>(model.second);
+                            if (modelName == "default_rectangle") editor.selectedEntity->removeComponent<CRectangleShape>();
+                            if (modelName == "default_circle") editor.selectedEntity->removeComponent<CCircleShape>();
+                        }
+                    }
+                }
+                ImGui::EndCombo();
+            }
         }
     }
 }

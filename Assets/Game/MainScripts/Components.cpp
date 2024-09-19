@@ -12,20 +12,24 @@ CName::CName(const std::string& n)
 	:name(n)
 {}
 
-CShape::CShape()
+CRectangleShape::CRectangleShape()
 	:rectangle(sf::Vector2f(width, height))
 {
 	rectangle.setFillColor(sf::Color::White);
 	rectangle.setOrigin(width/2.0f, height/2.0f);
 }
-CShape::CShape(sf::RectangleShape& rect)
-	:rectangle(rect)
+CRectangleShape::CRectangleShape(sf::RectangleShape& rect)
+	:rectangle(rect) {}
+
+CCircleShape::CCircleShape()
+	:circle(radius)
 {
-	rectangle.setFillColor(rect.getFillColor());
-	rectangle.setOutlineColor(rect.getOutlineColor());
-	rectangle.setOutlineThickness(rect.getOutlineThickness());
-	rectangle.setOrigin(rect.getSize().x / 2.0f, rect.getSize().y / 2.0f);
+	circle.setFillColor(sf::Color::White);
+	circle.setOrigin(radius, radius);
 }
+CCircleShape::CCircleShape(sf::CircleShape& cir)
+	:circle(cir) {}
+
 
 CCollision::CCollision() {}
 CCollision::CCollision(float r)

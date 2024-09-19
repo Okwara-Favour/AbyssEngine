@@ -65,6 +65,10 @@ void Hierarchy::DisplayEntities(Editor& editor)
                     }
                 }
             }
+            if (!editor.selectedEntity || (editor.selectedEntity && editingEntity && editingEntity->id() != editor.selectedEntity->id()))
+            {
+                editingEntity = nullptr;
+            }
         }
         ImGui::PopID();
     }

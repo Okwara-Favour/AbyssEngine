@@ -9,7 +9,10 @@ class Files : public AbstractEngineTab
 	const std::string DIR = "Assets";
 	std::string directory = "Assets";
 	std::string selected = "";
+	fs::path texturePathForAnimation;
+	bool popUp = false;
 	fs::path currentFile;
+	void MakeAnimation(Editor& editor);
 	void OpenDirectory(Editor& editor);
 	void OpenFile(const fs::path& path);
 	void OpenImage(const fs::path& path);

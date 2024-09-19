@@ -1,5 +1,6 @@
 #include "Display.h"
 #include "Editor.h"
+
 void Display::Init(Editor& editor)
 {
 	displayTexture.create(editor.WinSize().x, editor.WinSize().y);
@@ -27,9 +28,17 @@ void Display::Update(Editor& editor)
 	{
 		DisplaySelected(e, editor.selectedEntity);
 		EntityMouseDrag(e, editor);
-		if (e->hasComponent<CShape>())
+		if (e->hasComponent<CRectangleShape>())
 		{
-			displayTexture.draw(e->getComponent<CShape>().rectangle);
+			displayTexture.draw(e->getComponent<CRectangleShape>().rectangle);
+		}
+		if (e->hasComponent<CCircleShape>())
+		{
+			displayTexture.draw(e->getComponent<CCircleShape>().circle);
+		}
+		if (e->hasComponent<CAnimation>())
+		{
+			displayTexture.draw(e->getComponent<CAnimation>().animation.getSprite());
 		}
 	}
 	entityMouse = false;
@@ -56,13 +65,15 @@ void Display::EntityMouseDrag(std::shared_ptr<Entity>& entity, Editor& editor)
 	
 	if (editor.isMouseInTab())
 	{
-		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered() && EntityContainsPos(entity, mouseWorldPos))
+		bool alreadySelected = editor.selectedEntity && entity->id() == editor.selectedEntity->id();
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered() && EntityContainsPos(entity, mouseWorldPos)
+			&& !alreadySelected && !entityMouse)
 		{
 			editor.Save();
 			editor.selectedEntity = entity;
 			entityMouse = true;
 		}
-		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered() && !entityMouse && editor.selectedEntity)
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered() && !EntityContainsPos(entity, mouseWorldPos) && alreadySelected)
 		{
 			editor.Save();
 			editor.selectedEntity = nullptr;
@@ -80,10 +91,20 @@ bool Display::EntityContainsPos(std::shared_ptr<Entity>& entity, sf::Vector2f& p
 {
 	auto& Size = entity->getComponent<CSize>();
 	auto& Trans = entity->getComponent<CTransform>();
-	if (entity->hasComponent<CShape>())
+	if (entity->hasComponent<CRectangleShape>())
 	{
-		auto& Shape = entity->getComponent<CShape>();
+		auto& Shape = entity->getComponent<CRectangleShape>();
 		return Shape.rectangle.getGlobalBounds().contains(pos);
+	}
+	if (entity->hasComponent<CCircleShape>())
+	{
+		auto& Shape = entity->getComponent<CCircleShape>();
+		return Shape.circle.getGlobalBounds().contains(pos);
+	}
+	if (entity->hasComponent<CAnimation>())
+	{
+		auto& Shape = entity->getComponent<CAnimation>().animation;
+		return Shape.getSprite().getGlobalBounds().contains(pos);
 	}
 	auto minBounds = Trans.pos - (Size.size / 2.0f);
 	auto maxBounds = Trans.pos + (Size.size / 2.0f);
@@ -98,12 +119,34 @@ void Display::DisplaySelected(std::shared_ptr<Entity>& entity, std::shared_ptr<E
 {
 	if (selected && entity->id() == selected->id())
 	{
-		if (entity->hasComponent<CShape>())
+		if (entity->hasComponent<CRectangleShape>())
 		{
-			auto rect = entity->getComponent<CShape>().rectangle;
+			auto rect = entity->getComponent<CRectangleShape>().rectangle;
 			rect.setOutlineThickness(2);
 			rect.setOutlineColor(sf::Color::Blue);
 			rect.setFillColor(sf::Color::Transparent);
+			displayTexture.draw(rect);
+			return;
+		}
+		if (entity->hasComponent<CCircleShape>())
+		{
+			auto circ = entity->getComponent<CCircleShape>().circle;
+			circ.setOutlineThickness(2);
+			circ.setOutlineColor(sf::Color::Blue);
+			circ.setFillColor(sf::Color::Transparent);
+			displayTexture.draw(circ);
+			return;
+		}
+		if (entity->hasComponent<CAnimation>())
+		{
+			auto& sprite = entity->getComponent<CAnimation>().animation.getSprite();
+			auto bounds = sprite.getGlobalBounds();
+			sf::RectangleShape rect(sf::Vector2f(bounds.width, bounds.height));
+			rect.setPosition(sprite.getPosition().x, sprite.getPosition().y);
+			rect.setOutlineThickness(2);
+			rect.setOutlineColor(sf::Color::Blue);
+			rect.setFillColor(sf::Color::Transparent);
+			rect.setOrigin(bounds.width / 2.0f, bounds.height / 2.0f);
 			displayTexture.draw(rect);
 			return;
 		}
@@ -182,31 +225,31 @@ void Display::MenuTab(Editor& editor)
 			float angle = 0.0f;
 			if (ImGui::BeginMenu("Factors"))
 			{
-				ImGui::InputFloat("TranslateFactor", &translateFactor);
-				ImGui::InputFloat("ScaleFactor", &scaleFactor);
-				ImGui::InputFloat("RotateFactor", &rotateFactor);
+				ImGui::InputFloat("TranslateFactor", &editor.translateFactor);
+				ImGui::InputFloat("ScaleFactor", &editor.scaleFactor);
+				ImGui::InputFloat("RotateFactor", &editor.rotateFactor);
 				ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu("Translate"))
 			{
 				if (ImGui::Button("Up"));
 				if (ImGui::IsItemActivated()) hasClicked = true;
-				if (ImGui::IsItemActive())		vel.y = -translateFactor;
+				if (ImGui::IsItemActive())		vel.y = -editor.translateFactor;
 				
 				ImGui::SameLine();
 				if (ImGui::Button("Down"));
 				if (ImGui::IsItemActivated()) hasClicked = true;
-				if (ImGui::IsItemActive())		vel.y =  translateFactor;
+				if (ImGui::IsItemActive())		vel.y =  editor.translateFactor;
 				
 				ImGui::SameLine();
 				if (ImGui::Button("Left"));
 				if (ImGui::IsItemActivated()) hasClicked = true;
-				if (ImGui::IsItemActive())		vel.x = -translateFactor;
+				if (ImGui::IsItemActive())		vel.x = -editor.translateFactor;
 				
 				ImGui::SameLine();
 				if (ImGui::Button("Right"));
 				if (ImGui::IsItemActivated()) hasClicked = true;
-				if (ImGui::IsItemActive())		vel.x =  translateFactor;
+				if (ImGui::IsItemActive())		vel.x =  editor.translateFactor;
 
 				ImGui::SameLine();
 				ImGui::EndMenu();
@@ -215,29 +258,29 @@ void Display::MenuTab(Editor& editor)
 			{
 				if (ImGui::Button("ScaleW+"));
 				if (ImGui::IsItemActivated()) hasClicked = true;
-				if (ImGui::IsItemActive())		scale.x =  scaleFactor;
+				if (ImGui::IsItemActive())		scale.x =  editor.scaleFactor;
 
 				ImGui::SameLine();
 				if (ImGui::Button("ScaleH+"));
 				if (ImGui::IsItemActivated()) hasClicked = true;
-				if (ImGui::IsItemActive())		scale.y =  scaleFactor;
+				if (ImGui::IsItemActive())		scale.y =  editor.scaleFactor;
 
 				if (ImGui::Button("ScaleW-"));
 				if (ImGui::IsItemActivated()) hasClicked = true;
-				if (ImGui::IsItemActive())		scale.x = -scaleFactor;
+				if (ImGui::IsItemActive())		scale.x = -editor.scaleFactor;
 				ImGui::SameLine();
 				if (ImGui::Button("ScaleH-"));
 				if (ImGui::IsItemActivated()) hasClicked = true;
-				if (ImGui::IsItemActive())		scale.y = -scaleFactor;
+				if (ImGui::IsItemActive())		scale.y = -editor.scaleFactor;
 
 				if (ImGui::Button("Scale+"));
 				if (ImGui::IsItemActivated()) hasClicked = true;
-				if (ImGui::IsItemActive())		scale = Vec2(scaleFactor, scaleFactor);
+				if (ImGui::IsItemActive())		scale = Vec2(editor.scaleFactor, editor.scaleFactor);
 
 				ImGui::SameLine();
 				if (ImGui::Button("Scale-"));
 				if (ImGui::IsItemActivated()) hasClicked = true;
-				if (ImGui::IsItemActive())		scale = Vec2(-scaleFactor, -scaleFactor);
+				if (ImGui::IsItemActive())		scale = Vec2(-editor.scaleFactor, -editor.scaleFactor);
 
 				ImGui::EndMenu();
 			}
@@ -245,25 +288,31 @@ void Display::MenuTab(Editor& editor)
 			{
 				if (ImGui::Button("Rotate+"));
 				if (ImGui::IsItemActivated()) hasClicked = true;
-				if (ImGui::IsItemActive())		angle = rotateFactor;
+				if (ImGui::IsItemActive())		angle = editor.rotateFactor;
 				
 				ImGui::SameLine();
 				if (ImGui::Button("Rotate-"));
 				if (ImGui::IsItemActivated()) hasClicked = true;
-				if (ImGui::IsItemActive())		angle = -rotateFactor;
+				if (ImGui::IsItemActive())		angle = -editor.rotateFactor;
 				
 				ImGui::EndMenu();
 			}
-			if (editor.selectedEntity && editor.selectedEntity->hasComponent<CTransform>())
+			if (clock.getElapsedTime() >= sf::seconds(editor.duration) && editor.selectedEntity && editor.selectedEntity->hasComponent<CTransform>())
 			{
 				auto& Trans = editor.selectedEntity->getComponent<CTransform>();
 				Trans.pos += vel;
 				Trans.scale += scale;
 				Trans.angle += angle;
+				clock.restart();
 			}
 			if (hasClicked)
 			{
+				clock.restart();
 				editor.Save();
+				auto& Trans = editor.selectedEntity->getComponent<CTransform>();
+				Trans.pos += vel;
+				Trans.scale += scale;
+				Trans.angle += angle;
 			}
 			ImGui::EndMenu();
 		}

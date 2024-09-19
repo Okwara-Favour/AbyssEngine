@@ -5,7 +5,7 @@ namespace fs = std::experimental::filesystem;
 
 class EngineSettings : public AbstractEngineTab
 {
-	std::vector<std::string> fileList = {"Import", "Save" };
+	std::vector<std::string> fileList = {"Import", "Save", "Load"};
 	std::vector<std::string> editList = { "Undo", "Redo" };
 	std::vector<std::string> gameObjectList = { "Add", "Remove" };
 	std::vector<std::string> addList = { "Rectangle" };

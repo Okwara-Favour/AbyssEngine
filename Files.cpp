@@ -6,13 +6,10 @@
 
 void Files::Init(Editor& editor)
 {
-	for (const auto& entry : fs::directory_iterator(editor.currentDirectory)) {
-		const std::string filename = entry.path().filename().string();
-		if (filename == DIR)
-		{
-			editor.currentDirectory = entry.path();
-			break;
-		}
+	editor.currentDirectory /= DIR;
+	if (!fs::exists(editor.currentDirectory) || !fs::is_directory(editor.currentDirectory)) {
+		editor.HandleError("SEVERE WARNING: 'Assets' directory not found!");
+		return;
 	}
 }
 void Files::Update(Editor& editor)
@@ -28,6 +25,7 @@ void Files::Update(Editor& editor)
 	}
 	ImGui::EndTabBar();
 	ImGui::End();
+	MakeAnimation(editor);
 }
 
 
@@ -66,7 +64,8 @@ void Files::OpenDirectory(Editor& editor)
 
 			if (fs::is_regular_file(entry))
 			{
-				if (entry.path().extension().string() == ".png") 
+				auto extension = entry.path().extension().string();
+				if (extension == ".png" || extension == ".PNG")
 				{
 					if (!texture.loadFromFile(entry.path().string()))
 					{
@@ -85,7 +84,7 @@ void Files::OpenDirectory(Editor& editor)
 			if (fs::is_regular_file(entry))
 			{
 				auto extension = entry.path().extension().string();
-				if (extension == ".png") {
+				if (extension == ".png" || extension == ".PNG") {
 					OpenImage(entry);
 				}
 				else if (extension == ".txt" || extension == ".h" || extension == ".hpp" || extension == ".cpp") {
@@ -135,6 +134,12 @@ void Files::OpenImage(const fs::path& path)
 	{
 		RunDesiredApplication(path);
 	}
+	ImGui::SameLine();
+	if (ImGui::Button("Make Animation"))
+	{
+		texturePathForAnimation = path;
+		popUp = true;
+	}
 
 	auto texSize = texture.getSize();
 	std::string textureSize = std::to_string(texSize.x) + " X " + std::to_string(texSize.y);
@@ -164,4 +169,35 @@ void Files::RunDesiredApplication(const fs::path& path)
 #endif
 		std::thread commandThread(runCommand, command);
 		commandThread.detach();
+}
+
+void Files::MakeAnimation(Editor& editor)
+{
+	if (!popUp) return;
+	ImGui::Begin("AnimationSettings", nullptr, ImGuiWindowFlags_NoDocking);
+	static char animationName[128] = "";
+	static int frameCount = 1;
+	static int speed = 0;
+
+	ImGui::InputText("Animation Name", animationName, sizeof(animationName));
+	ImGui::InputInt("Frame Count", &frameCount);
+	ImGui::InputInt("Frame Duration", &speed);
+
+	if (ImGui::Button("Save")) {
+		sf::Texture texture;
+		texture.loadFromFile(texturePathForAnimation.string());
+		if (editor.textureMap.find(texturePathForAnimation.filename().string()) == editor.textureMap.end())
+		{
+			editor.textureMap[texturePathForAnimation.filename().string()] = texture;
+			editor.texturePathMap[texturePathForAnimation.filename().string()] = texturePathForAnimation.string();
+		}
+		Animation anim(std::string(animationName), texturePathForAnimation.filename().string(), editor.textureMap[texturePathForAnimation.filename().string()], frameCount, speed);
+		editor.addAnimation(anim);
+		popUp = false;
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Cancel")) {
+		popUp = false;
+	}
+	ImGui::End();
 }

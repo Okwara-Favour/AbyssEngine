@@ -1,16 +1,16 @@
 #pragma once
 #include "AbstractEngineTab.hpp"
 #include "SFML/Graphics.hpp"
+#include <chrono>
 
 class Entity;
 
 class Display : public AbstractEngineTab
 {
+	sf::Clock clock;
+	float duration = 0.25;
 	sf::RenderTexture displayTexture;
 	bool entityMouse = false;
-	float translateFactor = 1.0f;
-	float scaleFactor = 0.5f;
-	float rotateFactor = 0.5f;
 	ImVec2 windowPos;
 	ImVec2 contentMin;
 	ImVec2 contentMax;

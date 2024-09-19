@@ -3,9 +3,10 @@
 Animation::Animation()
 {}
 
-Animation::Animation(const std::string& name, const sf::Texture& t)
+Animation::Animation(const std::string& name, const std::string& texName, const sf::Texture& t)
 	:m_name(name)
 	,m_sprite(t)
+	,m_texName(texName)
 {
 	m_size = Vec2((float)t.getSize().x, (float)t.getSize().y);
 	m_sprite.setOrigin(m_size.x / 2.0f, m_size.y / 2.0f);
@@ -22,8 +23,9 @@ Animation::Animation(const std::string& name, const sf::Texture& t, const Vec2& 
 	m_sprite.setTextureRect(sf::IntRect(0, 0, m_size.x, m_size.y));
 }
 
-Animation::Animation(const std::string& name, const sf::Texture& t, size_t frameCount, size_t speed)
+Animation::Animation(const std::string& name, const std::string& texName, const sf::Texture& t, size_t frameCount, size_t speed)
 	:m_name(name)
+	,m_texName(texName)
 	,m_sprite(t)
 	,m_frameCount(frameCount)
 	,m_speed(speed)
@@ -61,6 +63,7 @@ Animation::Animation(const Animation& anim, const Vec2& resize)
 
 Animation::Animation(const Animation& anim)
 	:m_name(anim.m_name)
+	,m_texName(anim.m_texName)
 	,m_sprite(anim.m_sprite)
 	,m_currentFrame(anim.m_currentFrame)
 	,m_frameCount(anim.m_frameCount)
@@ -87,6 +90,10 @@ bool Animation::hasEnded() const
 const std::string& Animation::getName() const
 {
 	return m_name;
+}
+const std::string& Animation::getTexName() const
+{
+	return m_texName;
 }
 const Vec2& Animation::getSize() const
 {

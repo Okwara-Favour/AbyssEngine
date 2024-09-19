@@ -1,6 +1,8 @@
 #pragma once
 #include "AbstractEngineTab.hpp"
 
+namespace fs = std::experimental::filesystem;
+
 class Inspector : public AbstractEngineTab
 {
 	std::vector<std::string> Tags = { "Default", "Player" };

@@ -21,6 +21,14 @@ void EngineSettings::Update(Editor& editor)
                     {
                         ImportFiles(editor);
                     }
+                    if (item == "Save")
+                    {
+                        editor.SaveScene();
+                    }
+                    if (item == "Load")
+                    {
+                        editor.load = true;
+                    }
                 }
             }
             ImGui::EndMenu();
@@ -53,7 +61,9 @@ void EngineSettings::Update(Editor& editor)
                 {
                     if (item == "Remove")
                     {
+                        editor.Save();
                         editor.entityManager.destroyEntity(editor.selectedEntity);
+                        editor.selectedEntity = nullptr;
                     }
                 }
                 if (item == "Add" && ImGui::BeginMenu("Add"))
@@ -106,7 +116,7 @@ void EngineSettings::createEntity(Editor& editor, const std::string& type)
     {
         std::string name = "Rectangle" + std::to_string(entity->id());
         entity->addComponent<CName>(name);
-        entity->addComponent<CShape>();
+        entity->addComponent<CRectangleShape>();
     }
 }
 
