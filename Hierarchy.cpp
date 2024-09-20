@@ -11,7 +11,7 @@ void Hierarchy::Update(Editor& editor)
 	ImGui::Begin("Hierarchy");
 	ImGui::Text("Content of Tab Hierarchy");
     DisplayEntities(editor);
-
+    if (clock.getElapsedTime() > sf::seconds(duration)) clickCount = 0;
     if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
     {
         if (!ImGui::IsAnyItemHovered())
@@ -29,47 +29,113 @@ void Hierarchy::DisplayEntities(Editor& editor)
 
     for (const auto& entity : entities)
     {
-        ImGui::PushID(entity->id());  // Assuming entity has a GetID() method
+        if (entity->hasComponent<CParent>()) continue;
+        ImGui::PushID(entity->id());
+
+        if (entity->hasComponent<CChildren>())
+        {
+            auto& children = entity->getComponent<CChildren>();
+            if (ImGui::ArrowButton("##arrow", (children._editor_use_open) ? ImGuiDir_Down : ImGuiDir_Right))
+            {
+                children._editor_use_open = !children._editor_use_open;
+            }
+            ImGui::SameLine();
+        }
+
         if (ImGui::Selectable(entity->getComponent<CName>().name.c_str(), editor.selectedEntity && editor.selectedEntity->id() == entity->id(), ImGuiSelectableFlags_AllowDoubleClick))
         {
             if (editor.selectedEntity && editor.selectedEntity->id() != entity->id()) editor.Save();
             editor.selectedEntity = entity;
             if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
             {
-                name = entity->getComponent<CName>().name;
+                auto& name = entity->getComponent<CName>().name;
+                std::fill(nameBuffer, nameBuffer + sizeof(nameBuffer), '\0');
+                std::copy(name.begin(), name.end(), nameBuffer);
                 editingEntity = entity;
             }
         }
-        if (editingEntity && editingEntity->id() == entity->id())
-        {
-            ImGui::InputText("Rename", &name[0], name.size() + 1);
+        editEntityName(editor, entity);
+        ParentChildDropdown(editor, entity);
+        
+        ImGui::PopID();
+    }
+}
 
-            if (editor.isMouseInTab())
+
+void Hierarchy::ParentChildDropdown(Editor& editor, std::shared_ptr<Entity> entity)
+{
+    if (entity->hasComponent<CChildren>())
+    {
+        auto& children = entity->getComponent<CChildren>();
+        if (children._editor_use_open)
+        {
+            for (auto& c : entity->getComponent<CChildren>().children)
             {
-                for (auto& key : keyAction)
+                auto& childEntity = editor.entityManager.getEntity(c.first, c.second);
+                ImGui::PushID(childEntity->id());
+                if (childEntity->hasComponent<CChildren>())
                 {
-                    if (ImGui::IsKeyPressed(key.first))
+                    auto& grandChildren = childEntity->getComponent<CChildren>();
+                    if (ImGui::ArrowButton("##arrow", (grandChildren._editor_use_open) ? ImGuiDir_Down : ImGuiDir_Right))
                     {
-                        if (key.second == "ENTER")
-                        {
-                            entity->getComponent<CName>().name = name;
-                            if (name != entity->getComponent<CName>().name) editor.Save();
-                            name = "";
-                            editingEntity = nullptr;
-                        }
-                        if (key.second == "ESCAPE")
-                        {
-                            name = "";
-                            editingEntity = nullptr;
-                        }
+                        grandChildren._editor_use_open = !grandChildren._editor_use_open;
+                    }
+                    ImGui::SameLine();
+                }
+                if (ImGui::Selectable(childEntity->getComponent<CName>().name.c_str(), editor.selectedEntity && editor.selectedEntity->id() == childEntity->id()))
+                {
+                    clickCount++;
+                    if (editor.selectedEntity && editor.selectedEntity->id() != childEntity->id()) editor.Save();
+                    editor.selectedEntity = childEntity;
+                    bool doubleClick = clickCount == 2 && clock.getElapsedTime() <= sf::seconds(duration);
+                    if (ImGui::IsItemHovered() && doubleClick)
+                    {
+                        auto& name = childEntity->getComponent<CName>().name;
+                        std::fill(nameBuffer, nameBuffer + sizeof(nameBuffer), '\0');
+                        std::copy(name.begin(), name.end(), nameBuffer);
+                        editingEntity = childEntity;
+                    }
+                    clock.restart();
+                    if (doubleClick) clickCount = 0;
+                }
+                editEntityName(editor, childEntity);
+                ParentChildDropdown(editor, childEntity);
+                ImGui::PopID();
+            }
+        }
+    }
+}
+
+
+void Hierarchy::editEntityName(Editor& editor, std::shared_ptr<Entity> entity)
+{
+    if (editingEntity && editingEntity->id() == entity->id())
+    {
+        ImGui::InputText("Rename", &nameBuffer[0], 50);
+
+        if (editor.isMouseInTab())
+        {
+            for (auto& key : keyAction)
+            {
+                if (ImGui::IsKeyPressed(key.first))
+                {
+                    if (key.second == "ENTER")
+                    {
+                        std::string nameData = nameBuffer;
+                        entity->getComponent<CName>().name = nameData;
+                        if (nameData != entity->getComponent<CName>().name) editor.Save();
+                        editingEntity = nullptr;
+                    }
+                    if (key.second == "ESCAPE")
+                    {
+                        editingEntity = nullptr;
                     }
                 }
             }
-            if (!editor.selectedEntity || (editor.selectedEntity && editingEntity && editingEntity->id() != editor.selectedEntity->id()))
-            {
-                editingEntity = nullptr;
-            }
         }
-        ImGui::PopID();
+        if (!editor.selectedEntity || (editor.selectedEntity && editingEntity && editingEntity->id() != editor.selectedEntity->id()))
+        {
+            editingEntity = nullptr;
+        }
     }
 }

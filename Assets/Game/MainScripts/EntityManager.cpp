@@ -15,8 +15,8 @@ EntityVec& EntityManager::getEntities(const std::string& tag)
 std::shared_ptr<Entity>& EntityManager::getEntity(const size_t id, const std::string& tag)
 {
 	std::string uniqueTag = tag + std::to_string(id);
-	/* //if you want safety
-	auto it = m_uniqueEntityMap.find(uniqueTag);
+	 //if you want safety
+	/*auto it = m_uniqueEntityMap.find(uniqueTag);
 	if (it != m_uniqueEntityMap.end()) {
 		return it->second;
 	}
@@ -48,8 +48,30 @@ void EntityManager::changeTag(std::shared_ptr<Entity>& e, const std::string& new
 void EntityManager::modifyEntityTag(std::shared_ptr<Entity> entity, const std::string& newTag)
 {
 	if (!entity) return; // Guard against null pointers
-
 	const std::string& oldTag = entity->tag();
+
+	if (entity->hasComponent<CChildren>())
+	{
+		for (auto& c : entity->getComponent<CChildren>().children)
+		{
+			auto& child = getEntity(c.first, c.second);
+			child->getComponent<CParent>().tag = newTag;
+		}
+	}
+
+	if (entity->hasComponent<CParent>())
+	{
+		auto& p = entity->getComponent<CParent>();
+		auto& parent = getEntity(p.id, p.tag);
+		for (auto& c : parent->getComponent<CChildren>().children)
+		{
+			if (c.first == entity->id() && c.second == entity->tag())
+			{
+				c.second = newTag;
+				break;
+			}
+		}
+	}
 
 	// Remove the entity from the old tag in the entity map
 	auto& oldVec = m_entityMap[oldTag];
@@ -62,10 +84,11 @@ void EntityManager::modifyEntityTag(std::shared_ptr<Entity> entity, const std::s
 	m_entityMap[newTag].push_back(entity);
 
 	// If using m_uniqueEntityMap, update the unique entity references
-	auto uniqueEntity = m_uniqueEntityMap.find(oldTag);
+	std::string oldUniqueTag = oldTag + std::to_string(entity->id());
+	auto uniqueEntity = m_uniqueEntityMap.find(oldUniqueTag);
 	if (uniqueEntity != m_uniqueEntityMap.end() && uniqueEntity->second == entity) {
 		m_uniqueEntityMap.erase(uniqueEntity);
-		m_uniqueEntityMap[newTag] = entity;
+		m_uniqueEntityMap[newTag + std::to_string(entity->id())] = entity;
 	}
 
 	// Update the entity's internal tag (if it has one)
@@ -104,19 +127,6 @@ void EntityManager::update()
 	m_toChangeTag.clear();
 }
 
-EntityManager& EntityManager::operator=(const EntityManager& other) {
-	if (this != &other) {
-		// Perform deep copying of each vector/map
-		m_entities = deepCopyEntityVec(other.m_entities);
-		m_entityMap = deepCopyEntityMap(other.m_entityMap);
-		m_uniqueEntityMap = deepCopyUniqueEntityMap(other.m_uniqueEntityMap);
-		m_toAdd = deepCopyEntityVec(other.m_toAdd);
-		m_toDestroy = deepCopyEntityVec(other.m_toDestroy);
-		m_toChangeTag = deepCopyEntityStringPair(other.m_toChangeTag);
-		m_totalEntities = other.m_totalEntities;
-	}
-	return *this;
-}
 
 EntityVec EntityManager::deepCopyEntityVec(const EntityVec& vec) {
 	EntityVec result;
@@ -126,26 +136,25 @@ EntityVec EntityManager::deepCopyEntityVec(const EntityVec& vec) {
 	return result;
 }
 
-EntityMap EntityManager::deepCopyEntityMap(const EntityMap& map) {
-	EntityMap result;
-	for (const auto& pair : map) {
-		result[pair.first] = deepCopyEntityVec(pair.second);
-	}
-	return result;
-}
+void EntityManager::copyTo(EntityManager& other)
+{
+	if (this == &other) return;
 
-UniqueEntityMap EntityManager::deepCopyUniqueEntityMap(const UniqueEntityMap& map) {
-	UniqueEntityMap result;
-	for (const auto& pair : map) {
-		result[pair.first] = std::make_shared<Entity>(*pair.second);  // Deep copy each entity
+	other.m_totalEntities = m_totalEntities;
+	other.m_entities = deepCopyEntityVec(m_entities);
+	for (auto& e : other.m_entities)
+	{
+		other.m_entityMap[e->tag()].push_back(e);
+		other.m_uniqueEntityMap[e->tag() + std::to_string(e->id())] = e;
+		std::pair<std::shared_ptr<Entity>, std::string> changeElem = { e, e->tag() };
+		if (std::find(m_toChangeTag.begin(), m_toChangeTag.end(), changeElem) != m_toChangeTag.end())
+		{
+			other.m_toChangeTag.push_back(changeElem);
+		}
+		if (std::find(m_toDestroy.begin(), m_toDestroy.end(), e) != m_toDestroy.end())
+		{
+			other.m_toDestroy.push_back(e);
+		}
 	}
-	return result;
-}
-
-EntityStringPair EntityManager::deepCopyEntityStringPair(const EntityStringPair& pairVec) {
-	EntityStringPair result;
-	for (const auto& pair : pairVec) {
-		result.emplace_back(std::make_shared<Entity>(*pair.first), pair.second);  // Deep copy each entity
-	}
-	return result;
+	other.m_toAdd = deepCopyEntityVec(m_toAdd);
 }

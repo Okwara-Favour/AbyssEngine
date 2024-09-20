@@ -160,8 +160,13 @@ public:
 	CLayer(int l);
 };
 
+class Hierarchy;
+
 class CChildren : public Component
 {
+protected:
+	friend Hierarchy;
+	bool _editor_use_open = false;
 public:
 	std::vector<std::pair<size_t, std::string>> children;
 	CChildren(const std::vector<std::pair<size_t, std::string>>& c = {});

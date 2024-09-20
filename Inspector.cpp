@@ -12,6 +12,11 @@ void Inspector::Update(Editor& editor)
     ImGui::PushItemWidth(100);
 	if (editor.selectedEntity)
 	{
+        ImGui::Text("ID: %d", editor.selectedEntity->id());
+        if (editor.selectedEntity->hasComponent<CParent>())
+        {
+            ImGui::Text("Parent: %d", editor.selectedEntity->getComponent<CParent>().id);
+        }
         handleTags(editor);
         displayComponents(editor);
         handleComponents(editor);

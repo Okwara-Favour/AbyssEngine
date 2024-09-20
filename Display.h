@@ -10,7 +10,7 @@ class Display : public AbstractEngineTab
 	sf::Clock clock;
 	float duration = 0.25;
 	sf::RenderTexture displayTexture;
-	bool entityMouse = false;
+	bool entityClicked = false;
 	ImVec2 windowPos;
 	ImVec2 contentMin;
 	ImVec2 contentMax;

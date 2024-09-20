@@ -50,6 +50,7 @@ protected:
 	float translateFactor = 1.0f;
 	float scaleFactor = 0.5f;
 	float rotateFactor = 0.5f;
+	std::shared_ptr<Entity> parentEntity = nullptr;
 	fs::path currentDirectory = fs::current_path();
 	std::map<std::string, std::string> texturePathMap;
 	std::map<std::string, sf::Texture> textureMap;

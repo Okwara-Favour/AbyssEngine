@@ -2,21 +2,26 @@
 
 void Command::Save(EntityManager& em, std::shared_ptr<Entity>& e)
 {
+	EntityManager temp;
+	em.copyTo(temp);
 	EMHistoryRecover.clear();
 	size_t maxUndoDepth = 20;
 	if (EMHistory.size() >= maxUndoDepth)
 	{
 		EMHistory.erase(EMHistory.begin());
 	}
-	EMHistory.push_back({ em, (e) ? std::make_shared<Entity>(*e) : nullptr });
+	EMHistory.push_back({ temp, (e) ? std::make_shared<Entity>(*e) : nullptr });
 }
 void Command::Undo(EntityManager& em, std::shared_ptr<Entity>& e)
 {
 	if (!EMHistory.empty())
 	{
+		EntityManager temp;
+		em.copyTo(temp);
 		check = true;
-		EM = EMHistory.back();
-		EMHistoryRecover.push_back({ em, (e) ? std::make_shared<Entity>(*e) : nullptr });
+		EMHistory.back().first.copyTo(EM.first);
+		EM.second = EMHistory.back().second;
+		EMHistoryRecover.push_back({ temp, (e) ? std::make_shared<Entity>(*e) : nullptr });
 		e = EM.second;
 		EMHistory.pop_back();
 	}
@@ -26,9 +31,12 @@ void Command::Redo(EntityManager& em, std::shared_ptr<Entity>& e)
 {
 	if (!EMHistoryRecover.empty())
 	{
+		EntityManager temp;
+		em.copyTo(temp);
 		check = true;
-		EM = EMHistoryRecover.back();
-		EMHistory.push_back({ em, (e) ? std::make_shared<Entity>(*e) : nullptr });
+		EMHistoryRecover.back().first.copyTo(EM.first);
+		EM.second = EMHistoryRecover.back().second;
+		EMHistory.push_back({ temp, (e) ? std::make_shared<Entity>(*e) : nullptr });
 		e = EM.second;
 		EMHistoryRecover.pop_back();
 	}
@@ -38,7 +46,7 @@ void Command::Execute(EntityManager& em, std::shared_ptr<Entity>& e)
 {
 	if (check)
 	{
-		em = EM.first;
+		EM.first.copyTo(em);
 		e = EM.second;
 		check = false;
 	}

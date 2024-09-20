@@ -62,7 +62,11 @@ void EngineSettings::Update(Editor& editor)
                     if (item == "Remove")
                     {
                         editor.Save();
-                        editor.entityManager.destroyEntity(editor.selectedEntity);
+                        if (editor.parentEntity && editor.parentEntity->id() == editor.selectedEntity->id() && editor.parentEntity->tag() == editor.selectedEntity->tag())
+                        {
+                            editor.parentEntity = nullptr;
+                        }
+                        DeleteEntity(editor, editor.selectedEntity);
                         editor.selectedEntity = nullptr;
                     }
                 }
@@ -162,4 +166,59 @@ void EngineSettings::ImportFiles(Editor& editor)
     {
         free(outPath);
     }
+}
+
+void EngineSettings::ChangeParent(Editor& editor, std::shared_ptr<Entity>& entity, const std::shared_ptr<Entity>& parent)
+{
+    if (parent == nullptr) return;
+    if (parent->id() == entity->id() && parent->tag() == entity->tag()) return;
+    if (entity->hasComponent<CChildren>()) {
+        for (auto& c : entity->getComponent<CChildren>().children)
+        {
+            if (c.first == parent->id() && c.second == parent->tag()) return;
+        }
+    }
+    MakeIndependent(editor, entity);
+    auto& parentTrans = parent->getComponent<CTransform>();
+    entity->addComponent<CParent>(parent->id(), parent->tag(), parentTrans.pos, parentTrans.scale, parentTrans.angle);
+    if (!parent->hasComponent<CChildren>()) { parent->addComponent<CChildren>(); }
+    parent->getComponent<CChildren>().children.push_back({ entity->id(), entity->tag() });
+}
+
+void EngineSettings::MakeIndependent(Editor& editor, const std::shared_ptr<Entity>& entity)
+{
+    if (entity->hasComponent<CParent>())
+    {
+        auto& eParent = entity->getComponent<CParent>();
+        auto& eParentEntity = editor.entityManager.getEntity(eParent.id, eParent.tag);
+        auto& ePPChildren = eParentEntity->getComponent<CChildren>().children;
+        auto it = std::find(ePPChildren.begin(), ePPChildren.end(), std::make_pair(entity->id(), entity->tag()));
+        if (it != ePPChildren.end()) {
+            ePPChildren.erase(it);
+        }
+        if (ePPChildren.empty()) eParentEntity->removeComponent<CChildren>();
+        entity->removeComponent<CParent>();
+    }
+}
+
+void EngineSettings::DeleteEntity(Editor& editor, const std::shared_ptr<Entity>& entity)
+{
+    MakeIndependent(editor, entity);
+    if (entity->hasComponent<CChildren>())
+    {
+        auto& eChildren = entity->getComponent<CChildren>();
+        for (int i = 0; i < eChildren.children.size(); i++)
+        {
+            auto& c = eChildren.children[i];
+            if (editor.parentEntity != nullptr && editor.parentEntity->id() == c.first && editor.parentEntity->tag() == c.second)
+            {
+                editor.parentEntity = nullptr;
+            }
+            auto& cEntity = editor.entityManager.getEntity(c.first, c.second);
+            //std::cout << "Still deleting" << std::endl;
+            DeleteEntity(editor, cEntity);
+            i--;
+        }
+    }
+    editor.entityManager.destroyEntity(entity);
 }

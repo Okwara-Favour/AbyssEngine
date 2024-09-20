@@ -5,6 +5,8 @@ void RenderModifier::Init(Editor& editor)
 {
 	auto parent = editor.entityManager.addEntity("Parent");
 	auto child = editor.entityManager.addEntity("Child");
+	auto child2 = editor.entityManager.addEntity("Child");
+	auto grandChild = editor.entityManager.addEntity("grandChild");
 
 	parent->addComponent<CTransform>(Vec2(300, 400));
 	parent->addComponent<CRectangleShape>();
@@ -16,11 +18,31 @@ void RenderModifier::Init(Editor& editor)
 	child->addComponent<CSize>();
 	child->addComponent<CName>("C1");
 
+	child2->addComponent<CTransform>(Vec2(350, 450));
+	child2->addComponent<CRectangleShape>();
+	child2->addComponent<CSize>();
+	child2->addComponent<CName>("C2");
+
+	grandChild->addComponent<CTransform>(Vec2(350, 300));
+	grandChild->addComponent<CRectangleShape>();
+	grandChild->addComponent<CSize>();
+	grandChild->addComponent<CName>("GC1");
+
 	parent->addComponent<CChildren>();
 	parent->getComponent<CChildren>().children.push_back({ child->id(), child->tag() });
+	parent->getComponent<CChildren>().children.push_back({ child2->id(), child2->tag() });
 
 	auto& parentTrans = parent->getComponent<CTransform>();
 	child->addComponent<CParent>(parent->id(), parent->tag(), parentTrans.pos, parentTrans.scale, parentTrans.angle);
+	child2->addComponent<CParent>(parent->id(), parent->tag(), parentTrans.pos, parentTrans.scale, parentTrans.angle);
+
+
+	child->addComponent<CChildren>();
+	child->getComponent<CChildren>().children.push_back({ grandChild->id(), grandChild->tag() });
+
+	auto& childTrans = child->getComponent<CTransform>();
+	grandChild->addComponent<CParent>(child->id(), child->tag(), childTrans.pos, childTrans.scale, childTrans.angle);
+
 
 }
 void RenderModifier::Update(Editor& editor)
@@ -32,10 +54,18 @@ void RenderModifier::Update(Editor& editor)
 		if (e->hasComponent<CAnimation>()) e->getComponent<CAnimation>().animation.update();
 	}
 
-	/*if (ImGui::IsKeyPressed(ImGuiKey_E))
+	if (ImGui::IsKeyPressed(ImGuiKey_E))
 	{
-		if(editor.selectedEntity) editor.selectedEntity->getComponent<CAnimation>();
-	}*/
+		if (editor.selectedEntity) 
+		{
+			if (editor.selectedEntity->hasComponent<CChildren>()) {
+				for (auto& c : editor.selectedEntity->getComponent<CChildren>().children)
+				{
+					editor.HandleError(std::to_string(c.first) + c.second);
+				}
+			}
+		}
+	}
 }
 
 void RenderModifier::SetTransform(std::shared_ptr<Entity>& entity)
@@ -95,8 +125,13 @@ void RenderModifier::ParentChild(Editor& editor, std::shared_ptr<Entity>& entity
 			auto& child = editor.entityManager.getEntity(c.first, c.second);
 			if (child->hasComponent<CTransform>())
 			{
+				
 				auto& cParent = child->getComponent<CParent>();
 				auto& cTrans = child->getComponent<CTransform>();
+				if (ImGui::IsKeyPressed(ImGuiKey_N))
+				{
+					editor.HandleError(eTrans.pos.toString() + " " + cTrans.pos.toString() + " " + std::to_string(child->id()));
+				}
 				Vec2 scale = eTrans.scale / cParent.initialScale;
 				cTrans.scale = cTrans.scale.multiply(scale);
 				Vec2 relativePos = (cTrans.pos - cParent.initialPosition).multiply(scale);

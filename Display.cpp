@@ -41,7 +41,12 @@ void Display::Update(Editor& editor)
 			displayTexture.draw(e->getComponent<CAnimation>().animation.getSprite());
 		}
 	}
-	entityMouse = false;
+	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered() && !entityClicked && editor.selectedEntity)
+	{
+		editor.Save();
+		editor.selectedEntity = nullptr;
+	}
+	entityClicked = false;
 	editor.startPosition = ImGui::GetWindowViewport()->GetCenter();
 	ImGui::Image((void*)(intptr_t)displayTexture.getTexture().getNativeHandle(),
 		ImVec2(contentSize.x, contentSize.y),
@@ -66,17 +71,11 @@ void Display::EntityMouseDrag(std::shared_ptr<Entity>& entity, Editor& editor)
 	if (editor.isMouseInTab())
 	{
 		bool alreadySelected = editor.selectedEntity && entity->id() == editor.selectedEntity->id();
-		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered() && EntityContainsPos(entity, mouseWorldPos)
-			&& !alreadySelected && !entityMouse)
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered() && EntityContainsPos(entity, mouseWorldPos))
 		{
-			editor.Save();
+			if(!alreadySelected && !entityClicked) editor.Save();
 			editor.selectedEntity = entity;
-			entityMouse = true;
-		}
-		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered() && !EntityContainsPos(entity, mouseWorldPos) && alreadySelected)
-		{
-			editor.Save();
-			editor.selectedEntity = nullptr;
+			entityClicked = true;
 		}
 		if (ImGui::IsMouseDragging(ImGuiMouseButton_Left) && editor.selectedEntity && entity->id() == editor.selectedEntity->id())
 		{
@@ -308,9 +307,9 @@ void Display::MenuTab(Editor& editor)
 			if (hasClicked)
 			{
 				clock.restart();
-				editor.Save();
 				if (editor.selectedEntity)
 				{
+					editor.Save();
 					auto& Trans = editor.selectedEntity->getComponent<CTransform>();
 					Trans.pos += vel;
 					Trans.scale += scale;
