@@ -92,8 +92,8 @@ CLayer::CLayer() {}
 CLayer::CLayer(int l) : layer(l) {}
 
 CChildren::CChildren(const std::vector<std::pair<size_t, std::string>>& c) : children(c) {}
-CParent::CParent(const size_t i, const std::string& t, const Vec2& distance, const Vec2& size, const float a)
-	: id(i), tag(t), initialDistance(distance), size(size), initialSize(size), angle(a) {}
+CParent::CParent(const size_t i, const std::string& t, const Vec2& pos, const Vec2& scale, const float a)
+	: id(i), tag(t), initialPosition(pos), initialScale(scale), initialAngle(a) {}
 
 CParticleSystem::CParticleSystem(const ParticleSystem& ps) :particleSystem(ps) {}
 

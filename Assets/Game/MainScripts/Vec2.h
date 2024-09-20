@@ -36,6 +36,7 @@ public:
     Vec2& add(float num);
     Vec2& scale(float s);
     Vec2& rotate(float deg);
+    Vec2 multiply(const Vec2& v);
     float dist(const Vec2& v) const;
     float angleFromPoint(const Vec2& p);
     double angleBetweenTwoPoints(const Vec2& p1, const Vec2& p2);

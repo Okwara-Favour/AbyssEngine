@@ -172,11 +172,13 @@ class CParent : public Component
 public:
 	size_t id = 0;
 	std::string tag = "";
-	Vec2 initialDistance;
-	Vec2 size;
-	Vec2 initialSize;
-	float angle;
-	CParent(const size_t i = 0, const std::string& t = "", const Vec2& distance = Vec2(), const Vec2& size = Vec2(), const float a = 0.0f);
+	Vec2 childPos;
+	Vec2 childScale = Vec2(1,1);
+	float childAngle = 0;
+	Vec2 initialPosition;
+	Vec2 initialScale;
+	float initialAngle;
+	CParent(const size_t i = 0, const std::string& t = "", const Vec2& pos = Vec2(), const Vec2& scale = Vec2(), const float a = 0.0f);
 };
 
 class CParticleSystem : public Component

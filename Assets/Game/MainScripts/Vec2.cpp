@@ -152,6 +152,11 @@ Vec2& Vec2::scale(float s)
     return *this;
 }
 
+Vec2 Vec2::multiply(const Vec2& v)
+{
+    return Vec2(x * v.x, y * v.y);
+}
+
 Vec2& Vec2::rotate(float deg)
 {
     float rad = deg * 3.14159265358979323846 / 180.0;

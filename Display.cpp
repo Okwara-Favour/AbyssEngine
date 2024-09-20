@@ -309,10 +309,13 @@ void Display::MenuTab(Editor& editor)
 			{
 				clock.restart();
 				editor.Save();
-				auto& Trans = editor.selectedEntity->getComponent<CTransform>();
-				Trans.pos += vel;
-				Trans.scale += scale;
-				Trans.angle += angle;
+				if (editor.selectedEntity)
+				{
+					auto& Trans = editor.selectedEntity->getComponent<CTransform>();
+					Trans.pos += vel;
+					Trans.scale += scale;
+					Trans.angle += angle;
+				}
 			}
 			ImGui::EndMenu();
 		}
