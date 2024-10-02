@@ -174,6 +174,32 @@ void Inspector::displayComponents(Editor& editor)
         }
     }
 
+    if (editor.selectedEntity->hasAnyScriptable())
+    {
+        for (auto& script : editor.selectedEntity->m_scriptables)
+        {
+            if (editor.scriptManager.hasEnvironment(script.first))
+            {
+                if (ImGui::CollapsingHeader(script.first.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    for (auto& k : script.second.variableMap)
+                    {
+                        auto& varValue = k.second;
+                        if (varValue.type() == typeid(std::string))
+                        {
+                            std::string strValue = std::any_cast<std::string>(varValue);
+                            std::array<char, 256> buffer;
+                            std::size_t strLength = strValue.copy(buffer.data(), buffer.size() - 1);
+                            buffer[strLength] = '\0';
+                            ImGui::InputText(k.first.c_str(), buffer.data(), buffer.size());
+                            varValue = std::make_any<std::string>(buffer.data());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /*if (editor.selectedEntity->hasScriptable<Scriptable>())
     {
         for (const auto& script : editor.selectedEntity->m_scriptables)

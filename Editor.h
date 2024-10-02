@@ -56,6 +56,7 @@ class Editor
 	bool				load = false;
 	bool				fullScreen = false;
 	bool				isFullScreen = false;
+	EntityManager		EMCOPY;
 protected:
 	friend Files;
 	friend EngineSettings;

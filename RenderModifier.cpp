@@ -88,7 +88,7 @@ void RenderModifier::ParentChild(Editor& editor, std::shared_ptr<Entity>& entity
 		auto& eChildren = entity->getComponent<CChildren>().children;
 		for (auto& c : eChildren)
 		{
-			auto& child = editor.entityManager.getEntity(c.first, c.second);
+			auto& child = editor.entityManager.getEntity(c.first);
 			if (child->hasComponent<CTransform>())
 			{
 				

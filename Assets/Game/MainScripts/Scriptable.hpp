@@ -12,5 +12,6 @@ public:
 	std::shared_ptr<sol::table> instance;
 	std::shared_ptr<bool> instantiated = std::make_shared<bool>(false);
 	std::shared_ptr<bool> destroy = std::make_shared<bool>(false);
+	std::unordered_map<std::string, std::any> variableMap;
 	Scriptable(const std::string& n = "") : name(n) {}
 };

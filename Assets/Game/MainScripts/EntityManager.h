@@ -9,7 +9,7 @@
 typedef std::shared_ptr<Entity> GameObject;
 typedef std::vector<std::shared_ptr<Entity>> EntityVec;
 typedef std::map<std::string, EntityVec> EntityMap;
-typedef std::map<std::string, std::shared_ptr<Entity>> UniqueEntityMap;
+typedef std::map<size_t, std::shared_ptr<Entity>> UniqueEntityMap;
 typedef std::vector<std::pair<std::shared_ptr<Entity>, std::string>> EntityStringPair;
 class EntityManager
 {
@@ -26,7 +26,7 @@ public:
 	EntityManager();
 	EntityVec& getEntities();
 	EntityVec& getEntities(const std::string& tag);
-	std::shared_ptr<Entity>& getEntity(const size_t id, const std::string& tag);
+	std::shared_ptr<Entity>& getEntity(const size_t id);
 	std::shared_ptr<Entity> addEntity(const std::string& tag);
 	void changeTag(std::shared_ptr<Entity>& e, const std::string& newTag);
 	void destroyEntity(std::shared_ptr<Entity> e);

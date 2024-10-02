@@ -100,6 +100,11 @@ bool ScriptManager::hasScript(const std::string& name)
 	return scriptsPathMap.find(name) != scriptsPathMap.end();
 }
 
+bool ScriptManager::hasEnvironment(const std::string& name)
+{
+	return allEnvironment.find(name) != allEnvironment.end();
+}
+
 std::string ScriptManager::removeLuaExt(const std::string& filename)
 {
 	std::size_t dotPos = filename.rfind('.');
@@ -183,7 +188,7 @@ void ScriptManager::ExecuteEntityScripts(Editor& editor, std::shared_ptr<Entity>
 				sol::table Start = startFunc(*s.second.scriptClass, entity);
 				s.second.instance = std::make_shared<sol::table>(Start);
 				s.second.instantiated = std::make_shared<bool>(true);
-
+				mapLuaToAny(s.second);
 				Scriptable sc;
 				sc.name = s.second.name;
 				sc.instantiated = s.second.instantiated;
@@ -200,6 +205,7 @@ void ScriptManager::ExecuteEntityScripts(Editor& editor, std::shared_ptr<Entity>
 
 		if (!editor.gameMode) continue;
 
+		mapAnyToLua(s.second);
 		sol::function updateFunc = (*s.second.scriptClass)["Update"];
 		if (updateFunc.valid()) {
 			try {
@@ -247,4 +253,56 @@ void ScriptManager::Close()
 	allSOL.clear();
 	allEnvironment.clear();
 	lua.collect_garbage();
+}
+
+void ScriptManager::mapLuaToAny(Scriptable& script)
+{
+	for (const auto& pair : (*script.instance))
+	{
+		std::string varName = pair.first.as<std::string>();
+		auto& varValue = pair.second;
+
+		std::cout << varName << std::endl;
+		if (varValue.get_type() == sol::type::number)
+		{
+			if (varValue.is<int>()) {
+				script.variableMap[varName] = std::make_any<int>(varValue.as<int>());
+			}
+			else if (varValue.is<float>()) {
+				script.variableMap[varName] = std::make_any<float>(varValue.as<float>());
+			}
+			else if (varValue.is<double>()) {
+				script.variableMap[varName] = std::make_any<double>(varValue.as<double>());
+			}
+		}
+		else if (varValue.get_type() == sol::type::string) {
+			script.variableMap[varName] = std::make_any<std::string>(varValue.as<std::string>());
+		}
+	}
+}
+
+
+void ScriptManager::mapAnyToLua(Scriptable& script)
+{
+	for (const auto& pair : script.variableMap)
+	{
+		const std::string& varName = pair.first;
+		const std::any& varValue = pair.second;
+		if (varValue.type() == typeid(int))
+		{
+			(*script.instance)[varName] = std::any_cast<int>(varValue);
+		}
+		else if (varValue.type() == typeid(float))
+		{
+			(*script.instance)[varName] = std::any_cast<float>(varValue);
+		}
+		else if (varValue.type() == typeid(double))
+		{
+			(*script.instance)[varName] = std::any_cast<double>(varValue);
+		}
+		else if (varValue.type() == typeid(std::string))
+		{
+			(*script.instance)[varName] = std::any_cast<std::string>(varValue);
+		}
+	}
 }

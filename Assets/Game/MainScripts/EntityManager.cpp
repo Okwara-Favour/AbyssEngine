@@ -12,18 +12,17 @@ EntityVec& EntityManager::getEntities(const std::string& tag)
 	return m_entityMap[tag];
 }
 
-std::shared_ptr<Entity>& EntityManager::getEntity(const size_t id, const std::string& tag)
+std::shared_ptr<Entity>& EntityManager::getEntity(const size_t id)
 {
-	std::string uniqueTag = tag + std::to_string(id);
 	 //if you want safety
-	/*auto it = m_uniqueEntityMap.find(uniqueTag);
+	/*auto it = m_uniqueEntityMap.find(id);
 	if (it != m_uniqueEntityMap.end()) {
 		return it->second;
 	}
 	else {
 		throw std::runtime_error("Entity not found");
 	}*/
-	return m_uniqueEntityMap[uniqueTag];
+	return m_uniqueEntityMap[id];
 }
 
 std::shared_ptr<Entity> EntityManager::addEntity(const std::string& tag)
@@ -54,7 +53,7 @@ void EntityManager::modifyEntityTag(std::shared_ptr<Entity> entity, const std::s
 	{
 		for (auto& c : entity->getComponent<CChildren>().children)
 		{
-			auto& child = getEntity(c.first, c.second);
+			auto& child = getEntity(c.first);
 			child->getComponent<CParent>().tag = newTag;
 		}
 	}
@@ -62,7 +61,7 @@ void EntityManager::modifyEntityTag(std::shared_ptr<Entity> entity, const std::s
 	if (entity->hasComponent<CParent>())
 	{
 		auto& p = entity->getComponent<CParent>();
-		auto& parent = getEntity(p.id, p.tag);
+		auto& parent = getEntity(p.id);
 		for (auto& c : parent->getComponent<CChildren>().children)
 		{
 			if (c.first == entity->id() && c.second == entity->tag())
@@ -84,11 +83,10 @@ void EntityManager::modifyEntityTag(std::shared_ptr<Entity> entity, const std::s
 	m_entityMap[newTag].push_back(entity);
 
 	// If using m_uniqueEntityMap, update the unique entity references
-	std::string oldUniqueTag = oldTag + std::to_string(entity->id());
-	auto uniqueEntity = m_uniqueEntityMap.find(oldUniqueTag);
+	auto uniqueEntity = m_uniqueEntityMap.find(entity->id());
 	if (uniqueEntity != m_uniqueEntityMap.end() && uniqueEntity->second == entity) {
 		m_uniqueEntityMap.erase(uniqueEntity);
-		m_uniqueEntityMap[newTag + std::to_string(entity->id())] = entity;
+		m_uniqueEntityMap[entity->id()] = entity;
 	}
 
 	// Update the entity's internal tag (if it has one)
@@ -106,7 +104,7 @@ void EntityManager::update()
 	{
 		m_entities.push_back(e);
 		m_entityMap[(e->tag())].push_back(e);
-		m_uniqueEntityMap[e->tag() + std::to_string(e->id())] = e;
+		m_uniqueEntityMap[e->id()] = e;
 	}
 
 	for (auto& e : m_toDestroy)
@@ -127,7 +125,7 @@ void EntityManager::update()
 		if (entityMapIt != m_entityMap[(e->tag())].end()) {
 			m_entityMap[(e->tag())].erase(entityMapIt);
 		}
-		m_uniqueEntityMap.erase(e->tag() + std::to_string(e->id()));
+		m_uniqueEntityMap.erase(e->id());
 	}
 
 	m_toAdd.clear();
@@ -153,7 +151,7 @@ void EntityManager::copyTo(EntityManager& other)
 	for (auto& e : other.m_entities)
 	{
 		other.m_entityMap[e->tag()].push_back(e);
-		other.m_uniqueEntityMap[e->tag() + std::to_string(e->id())] = e;
+		other.m_uniqueEntityMap[e->id()] = e;
 		std::pair<std::shared_ptr<Entity>, std::string> changeElem = { e, e->tag() };
 		if (std::find(m_toChangeTag.begin(), m_toChangeTag.end(), changeElem) != m_toChangeTag.end())
 		{

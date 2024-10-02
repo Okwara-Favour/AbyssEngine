@@ -80,7 +80,7 @@ void Hierarchy::ParentChildDropdown(Editor& editor, std::shared_ptr<Entity> enti
         {
             for (auto& c : entity->getComponent<CChildren>().children)
             {
-                auto& childEntity = editor.entityManager.getEntity(c.first, c.second);
+                auto& childEntity = editor.entityManager.getEntity(c.first);
                 ImGui::PushID(childEntity->id());
                 if (childEntity->hasComponent<CChildren>())
                 {

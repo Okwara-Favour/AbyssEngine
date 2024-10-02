@@ -11,100 +11,102 @@ void EngineSettings::Update(Editor& editor)
     ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoMove);
     if (ImGui::BeginMenuBar())
     {
-        if (ImGui::BeginMenu("File"))
+        if (!editor.gameMode)
         {
-            for (const auto& item : fileList)
+            if (ImGui::BeginMenu("File"))
             {
-                if (ImGui::MenuItem(item.c_str()))
+                for (const auto& item : fileList)
                 {
-                    if (item == "Import")
+                    if (ImGui::MenuItem(item.c_str()))
                     {
-                        ImportFiles(editor);
-                    }
-                    if (item == "Save")
-                    {
-                        editor.SaveScene();
-                    }
-                    if (item == "Load")
-                    {
-                        editor.load = true;
-                    }
-                }
-            }
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Edit"))
-        {
-            for (const auto& item : editList)
-            {
-                if (ImGui::MenuItem(item.c_str()))
-                {
-                    if (item == "Undo")
-                    {
-                        editor.parentEntity = nullptr;
-                        editor.Undo();
-                    }
-                    if (item == "Redo")
-                    {
-                        editor.parentEntity = nullptr;
-                        editor.Redo();
-                    }
-                    // Handle edit action selection
-                }
-            }
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("GameObject"))
-        {
-            for (const auto& item : gameObjectList)
-            {
-                if (item != "Add" && ImGui::MenuItem(item.c_str()))
-                {
-                    if (item == "Make Independent")
-                    {
-                        MakeIndependent(editor, editor.selectedEntity);
-                    }
-                    if (item == "Make Child")
-                    {
-                        if (editor.parentEntity && editor.selectedEntity) 
+                        if (item == "Import")
                         {
-                            ChangeParent(editor, editor.selectedEntity, editor.parentEntity);
+                            ImportFiles(editor);
+                        }
+                        if (item == "Save")
+                        {
+                            editor.SaveScene();
+                        }
+                        if (item == "Load")
+                        {
+                            editor.load = true;
                         }
                     }
-                    if (item == "Make Parent")
+                }
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Edit"))
+            {
+                for (const auto& item : editList)
+                {
+                    if (ImGui::MenuItem(item.c_str()))
                     {
-                        if (editor.selectedEntity) editor.parentEntity = editor.selectedEntity;
-                    }
-                    if (item == "Remove")
-                    {
-                        if (editor.selectedEntity)
+                        if (item == "Undo")
                         {
-                            editor.Save();
-                            if (editor.parentEntity && editor.parentEntity->id() == editor.selectedEntity->id() && editor.parentEntity->tag() == editor.selectedEntity->tag())
+                            editor.parentEntity = nullptr;
+                            editor.Undo();
+                        }
+                        if (item == "Redo")
+                        {
+                            editor.parentEntity = nullptr;
+                            editor.Redo();
+                        }
+                        // Handle edit action selection
+                    }
+                }
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("GameObject"))
+            {
+                for (const auto& item : gameObjectList)
+                {
+                    if (item != "Add" && ImGui::MenuItem(item.c_str()))
+                    {
+                        if (item == "Make Independent")
+                        {
+                            MakeIndependent(editor, editor.selectedEntity);
+                        }
+                        if (item == "Make Child")
+                        {
+                            if (editor.parentEntity && editor.selectedEntity)
                             {
-                                editor.parentEntity = nullptr;
+                                ChangeParent(editor, editor.selectedEntity, editor.parentEntity);
                             }
-                            DeleteEntity(editor, editor.selectedEntity);
-                            editor.selectedEntity = nullptr;
                         }
-                    }
-                }
-                if (item == "Add" && ImGui::BeginMenu("Add"))
-                {
-                    for (const auto& addItem : addList)
-                    {
-                        if (ImGui::MenuItem(addItem.c_str()))
+                        if (item == "Make Parent")
                         {
-                            createEntity(editor, addItem);
+                            if (editor.selectedEntity) editor.parentEntity = editor.selectedEntity;
+                        }
+                        if (item == "Remove")
+                        {
+                            if (editor.selectedEntity)
+                            {
+                                editor.Save();
+                                if (editor.parentEntity && editor.parentEntity->id() == editor.selectedEntity->id() && editor.parentEntity->tag() == editor.selectedEntity->tag())
+                                {
+                                    editor.parentEntity = nullptr;
+                                }
+                                DeleteEntity(editor, editor.selectedEntity);
+                                editor.selectedEntity = nullptr;
+                            }
                         }
                     }
-                    ImGui::EndMenu();
+                    if (item == "Add" && ImGui::BeginMenu("Add"))
+                    {
+                        for (const auto& addItem : addList)
+                        {
+                            if (ImGui::MenuItem(addItem.c_str()))
+                            {
+                                createEntity(editor, addItem);
+                            }
+                        }
+                        ImGui::EndMenu();
+                    }
                 }
+                ImGui::EndMenu();
             }
-            ImGui::EndMenu();
         }
-
         if (ImGui::BeginMenu("Window"))
         {
             for (const auto& item : winList)
@@ -216,7 +218,7 @@ void EngineSettings::MakeIndependent(Editor& editor, const std::shared_ptr<Entit
     if (entity->hasComponent<CParent>())
     {
         auto& eParent = entity->getComponent<CParent>();
-        auto& eParentEntity = editor.entityManager.getEntity(eParent.id, eParent.tag);
+        auto& eParentEntity = editor.entityManager.getEntity(eParent.id);
         auto& ePPChildren = eParentEntity->getComponent<CChildren>().children;
         auto it = std::find(ePPChildren.begin(), ePPChildren.end(), std::make_pair(entity->id(), entity->tag()));
         if (it != ePPChildren.end()) {
@@ -241,7 +243,7 @@ void EngineSettings::DeleteEntity(Editor& editor, const std::shared_ptr<Entity>&
             {
                 editor.parentEntity = nullptr;
             }
-            auto& cEntity = editor.entityManager.getEntity(c.first, c.second);
+            auto& cEntity = editor.entityManager.getEntity(c.first);
             //std::cout << "Still deleting" << std::endl;
             DeleteEntity(editor, cEntity);
             i--;

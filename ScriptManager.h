@@ -20,6 +20,8 @@ class ScriptManager
 	std::string removeLuaExt(const std::string& filename);
 	std::vector<Scriptable> allSOL;
 	std::unordered_map<std::string, std::shared_ptr<sol::environment>> allEnvironment;
+	void mapLuaToAny(Scriptable& script);
+	void mapAnyToLua(Scriptable& script);
 public:
 	sol::state lua;
 	std::unordered_map<std::string, std::string> scriptsMap;
@@ -28,6 +30,7 @@ public:
 	void ProcessScript(const std::string& name, const std::string& filename, std::unordered_set<std::string> processedScript = {});
 	void LoadScript(const std::string& filename, const fs::path& directory);
 	bool hasScript(const std::string& name);
+	bool hasEnvironment(const std::string& name);
 	void ExecuteScript(const std::string& name);
 	void ResetScript(const std::string& filename, const fs::path& directory);
 	void ExecuteEntityScripts(Editor& editor, std::shared_ptr<Entity>& entity);

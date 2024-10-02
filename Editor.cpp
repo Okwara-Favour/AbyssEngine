@@ -47,7 +47,7 @@ void Command::Execute(EntityManager& em, std::shared_ptr<Entity>& e)
 	if (check)
 	{
 		EM.first.copyTo(em);
-		e = (EM.second) ? em.getEntity(EM.second->id(), EM.second->tag()) : nullptr;
+		e = (EM.second) ? em.getEntity(EM.second->id()) : nullptr;
 		check = false;
 	}
 }
@@ -245,7 +245,7 @@ void Editor::AddChildEntitiesToSceneFile(nlohmann::json& dict, const std::shared
 
 	for (auto& child : children)
 	{
-		auto& e = entityManager.getEntity(child.first, child.second);
+		auto& e = entityManager.getEntity(child.first);
 		nlohmann::json entityField;
 		entityField["TAG"] = e->tag();
 		if (e->hasComponent<CTransform>())
@@ -527,10 +527,16 @@ void Editor::LoadScene()
 
 void Editor::StartGame()
 {
+	if (gameMode) return;
 	gameMode = true;
+	entityManager.copyTo(EMCOPY);
+	selectedEntity = nullptr;
 }
 
 void Editor::QuitGame()
 {
+	if (!gameMode) return;
 	gameMode = false;
+	EMCOPY.copyTo(entityManager);
+	selectedEntity = nullptr;
 }
