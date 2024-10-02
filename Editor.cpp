@@ -22,7 +22,7 @@ void Command::Undo(EntityManager& em, std::shared_ptr<Entity>& e)
 		EMHistory.back().first.copyTo(EM.first);
 		EM.second = EMHistory.back().second;
 		EMHistoryRecover.push_back({ temp, (e) ? std::make_shared<Entity>(*e) : nullptr });
-		e = EM.second;
+		//e = EM.second;
 		EMHistory.pop_back();
 	}
 }
@@ -37,7 +37,7 @@ void Command::Redo(EntityManager& em, std::shared_ptr<Entity>& e)
 		EMHistoryRecover.back().first.copyTo(EM.first);
 		EM.second = EMHistoryRecover.back().second;
 		EMHistory.push_back({ temp, (e) ? std::make_shared<Entity>(*e) : nullptr });
-		e = EM.second;
+		//e = EM.second;
 		EMHistoryRecover.pop_back();
 	}
 }
@@ -47,7 +47,7 @@ void Command::Execute(EntityManager& em, std::shared_ptr<Entity>& e)
 	if (check)
 	{
 		EM.first.copyTo(em);
-		e = EM.second;
+		e = (EM.second) ? em.getEntity(EM.second->id(), EM.second->tag()) : nullptr;
 		check = false;
 	}
 }
@@ -82,6 +82,15 @@ Editor::Editor()
 	engineTabs["Hierarchy"] = std::make_unique<Hierarchy>();
 	engineTabs["Display"] = std::make_unique<Display>();
 	engineTabs["RenderModifier"] = std::make_unique<RenderModifier>();
+
+	Vec2::Lua(scriptManager.lua);
+	CTransform::Lua(scriptManager.lua);
+	CName::Lua(scriptManager.lua);
+	CSize::Lua(scriptManager.lua);
+	CRectangleShape::Lua(scriptManager.lua);
+	CCircleShape::Lua(scriptManager.lua);
+	Entity::Lua(scriptManager.lua);
+	EntityManager::Lua(scriptManager.lua);
 	Init();
 	command.Save(entityManager, selectedEntity);
 }
@@ -94,7 +103,11 @@ void Editor::Init()
 }
 void Editor::ProcessEvent(sf::Event& event) { ImGui::SFML::ProcessEvent(event); }
 void Editor::Render() { ImGui::SFML::Render(window); }
-void Editor::CloseTabs() {	ImGui::SFML::Shutdown(); }
+void Editor::CloseTabs() 
+{
+	scriptManager.Close();
+	ImGui::SFML::Shutdown();
+}
 void Editor::MainPage()
 {
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
@@ -112,6 +125,7 @@ void Editor::Update()
 	MainPage();
 	command.Execute(entityManager, selectedEntity);
 	entityManager.update();
+	scriptManager.UpdateSOL();
 	updateAnimation();
 	try
 	{
@@ -224,6 +238,87 @@ void Editor::updateAnimation()
 	anim_toRemove.clear();
 }
 
+void Editor::AddChildEntitiesToSceneFile(nlohmann::json& dict, const std::shared_ptr<Entity> parent)
+{
+	auto& children = parent->getComponent<CChildren>().children;
+	std::vector<nlohmann::json> childEntityRecord;
+
+	for (auto& child : children)
+	{
+		auto& e = entityManager.getEntity(child.first, child.second);
+		nlohmann::json entityField;
+		entityField["TAG"] = e->tag();
+		if (e->hasComponent<CTransform>())
+		{
+			auto& trans = e->getComponent<CTransform>();
+			entityField["PX"] = trans.pos.x;
+			entityField["PY"] = trans.pos.y;
+			entityField["SX"] = trans.scale.x;
+			entityField["SY"] = trans.scale.y;
+			entityField["R"] = trans.angle;
+		}
+		if (e->hasComponent<CName>())
+		{
+			entityField["NAME"] = e->getComponent<CName>().name;
+		}
+		else {
+			entityField["NAME"] = "Unnamed";
+		}
+		if (e->hasComponent<CRectangleShape>())
+		{
+			entityField["RENDER"] = "Rectangle";
+		}
+		else if (e->hasComponent<CCircleShape>())
+		{
+			entityField["RENDER"] = "Circle";
+		}
+		else if (e->hasComponent<CAnimation>())
+		{
+			entityField["RENDER"] = e->getComponent<CAnimation>().animation.getName();
+		}
+		else {
+			entityField["RENDER"] = "None";
+		}
+		if (e->hasComponent<CChildren>())
+		{
+			entityField["HASCHILDREN"] = true;
+			AddChildEntitiesToSceneFile(entityField, e);
+		}
+		else
+		{
+			entityField["HASCHILDREN"] = false;
+		}
+		childEntityRecord.push_back(entityField);
+	}
+	dict["ENTITY"] += childEntityRecord;
+}
+
+void Editor::LoadChildEntitiesFromSceneFile(const nlohmann::json& dict, const std::shared_ptr<Entity> parent)
+{
+	for (const auto& entityField : dict[0])
+	{
+		auto entity = entityManager.addEntity(entityField["TAG"].get<std::string>());
+		entity->addComponent<CName>(entityField["NAME"].get<std::string>());
+		Vec2 pos(entityField["PX"].get<float>(), entityField["PY"].get<float>());
+		Vec2 scale(entityField["SX"].get<float>(), entityField["SY"].get<float>());
+		float angle = entityField["R"].get<float>();
+		entity->addComponent<CTransform>(pos, scale, angle);
+		entity->addComponent<CSize>();
+		std::string renderName = entityField["RENDER"].get<std::string>();
+		if (renderName == "Rectangle") entity->addComponent<CRectangleShape>();
+		if (renderName == "Circle") entity->addComponent<CCircleShape>();
+		if (renderName != "Circle" && renderName != "Rectangle") entity->addComponent<CAnimation>(animationMap[renderName]);
+
+		if (entityField["HASCHILDREN"].get<bool>())
+		{
+			LoadChildEntitiesFromSceneFile(entityField["ENTITY"], entity);
+		}
+		auto& parentTrans = parent->getComponent<CTransform>();
+		entity->addComponent<CParent>(parent->id(), parent->tag(), parentTrans.pos, parentTrans.scale, parentTrans.angle);
+		parent->getComponent<CChildren>().children.push_back({ entity->id(), entity->tag() });
+	}
+}
+
 void Editor::SaveScene()
 {
 	nlohmann::json SceneCollection;
@@ -266,6 +361,7 @@ void Editor::SaveScene()
 
 	for (auto& e : entityManager.getEntities())
 	{
+		if (e->hasComponent<CParent>()) continue;
 		nlohmann::json entityField;
 		entityField["TAG"] = e->tag();
 		if (e->hasComponent<CTransform>())
@@ -298,6 +394,15 @@ void Editor::SaveScene()
 		}
 		else {
 			entityField["RENDER"] = "None";
+		}
+		if (e->hasComponent<CChildren>())
+		{
+			entityField["HASCHILDREN"] = true;
+			AddChildEntitiesToSceneFile(entityField, e);
+		}
+		else
+		{
+			entityField["HASCHILDREN"] = false;
 		}
 		entityRecord.push_back(entityField);
 	}
@@ -408,8 +513,24 @@ void Editor::LoadScene()
 			if (renderName == "Rectangle") entity->addComponent<CRectangleShape>();
 			if (renderName == "Circle") entity->addComponent<CCircleShape>();
 			if (renderName != "Circle" && renderName != "Rectangle") entity->addComponent<CAnimation>(animationMap[renderName]);
+
+			if (entityField["HASCHILDREN"].get<bool>())
+			{
+				entity->addComponent<CChildren>();
+				LoadChildEntitiesFromSceneFile(entityField["ENTITY"], entity);
+			}
 		}
 	}
 	
 	load = false;
+}
+
+void Editor::StartGame()
+{
+	gameMode = true;
+}
+
+void Editor::QuitGame()
+{
+	gameMode = false;
 }

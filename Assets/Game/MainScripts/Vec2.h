@@ -1,6 +1,7 @@
 #pragma once
 #include <cmath>
 #include <string>
+#include <sol/sol.hpp>
 
 class Vec2
 {
@@ -46,4 +47,6 @@ public:
     void setVec2(float nx, float ny);
     Vec2& makeWholeNumber();
     std::string toString();
+
+    static void Lua(sol::state& lua);
 };

@@ -3,6 +3,20 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <deque>
+
+extern "C"
+{
+#include "LUA/include/lauxlib.h"
+#include "LUA/include/lua.h"
+#include "LUA/include/lualib.h"
+}
+
+#ifdef _WIN64
+#pragma comment(lib, "LUA/lua54.lib")
+#endif
+
+#include <sol/sol.hpp>
+
 #include "imgui.h"
 #include "imgui-SFML.h"
 #include "NLOHMANN/json.hpp"
@@ -15,6 +29,7 @@
 #include "Display.h"
 #include "RenderModifier.h"
 #include "Assets/Game/MainScripts/EntityManager.h"
+#include "ScriptManager.h"
 
 class Command
 {
@@ -30,7 +45,7 @@ public:
 	void Clear();
 };
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 class Editor
 {
 	std::map<std::string, std::unique_ptr<AbstractEngineTab>> engineTabs;
@@ -46,10 +61,13 @@ protected:
 	friend EngineSettings;
 	friend Inspector;
 	friend Display;
+	friend Hierarchy;
+	friend RenderModifier;
 	float duration = 0.25;
 	float translateFactor = 1.0f;
 	float scaleFactor = 0.5f;
 	float rotateFactor = 0.5f;
+	ScriptManager scriptManager;
 	std::shared_ptr<Entity> parentEntity = nullptr;
 	fs::path currentDirectory = fs::current_path();
 	std::map<std::string, std::string> texturePathMap;
@@ -61,6 +79,7 @@ protected:
 	void removeAnimation(const Animation& anim);
 	void updateAnimation();
 public:
+	bool					gameMode = false;
 	ImVec2					startPosition;
 	std::shared_ptr<Entity> selectedEntity = nullptr;
 	EntityManager			entityManager;
@@ -77,10 +96,14 @@ public:
 	void Redo();
 	void Run();
 	void HandleError(const std::string& error);
+	void AddChildEntitiesToSceneFile(nlohmann::json& dict, const std::shared_ptr<Entity> parent);
+	void LoadChildEntitiesFromSceneFile(const nlohmann::json& dict, const std::shared_ptr<Entity> parent);
 	void SaveScene();
 	void LoadScene();
 	void CloseEditor();
 	void ToggleFullScreen();
+	void StartGame();
+	void QuitGame();
 	const bool HasClosed() const;
 	const bool FullScreen() const;
 	bool isMouseInTab();

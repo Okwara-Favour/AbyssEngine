@@ -3,47 +3,12 @@
 
 void RenderModifier::Init(Editor& editor)
 {
-	auto parent = editor.entityManager.addEntity("Parent");
-	auto child = editor.entityManager.addEntity("Child");
-	auto child2 = editor.entityManager.addEntity("Child");
-	auto grandChild = editor.entityManager.addEntity("grandChild");
+	auto entity = editor.entityManager.addEntity("Test");
 
-	parent->addComponent<CTransform>(Vec2(300, 400));
-	parent->addComponent<CRectangleShape>();
-	parent->addComponent<CSize>();
-	parent->addComponent<CName>("P1");
-
-	child->addComponent<CTransform>(Vec2(350, 450));
-	child->addComponent<CRectangleShape>();
-	child->addComponent<CSize>();
-	child->addComponent<CName>("C1");
-
-	child2->addComponent<CTransform>(Vec2(350, 450));
-	child2->addComponent<CRectangleShape>();
-	child2->addComponent<CSize>();
-	child2->addComponent<CName>("C2");
-
-	grandChild->addComponent<CTransform>(Vec2(350, 300));
-	grandChild->addComponent<CRectangleShape>();
-	grandChild->addComponent<CSize>();
-	grandChild->addComponent<CName>("GC1");
-
-	parent->addComponent<CChildren>();
-	parent->getComponent<CChildren>().children.push_back({ child->id(), child->tag() });
-	parent->getComponent<CChildren>().children.push_back({ child2->id(), child2->tag() });
-
-	auto& parentTrans = parent->getComponent<CTransform>();
-	child->addComponent<CParent>(parent->id(), parent->tag(), parentTrans.pos, parentTrans.scale, parentTrans.angle);
-	child2->addComponent<CParent>(parent->id(), parent->tag(), parentTrans.pos, parentTrans.scale, parentTrans.angle);
-
-
-	child->addComponent<CChildren>();
-	child->getComponent<CChildren>().children.push_back({ grandChild->id(), grandChild->tag() });
-
-	auto& childTrans = child->getComponent<CTransform>();
-	grandChild->addComponent<CParent>(child->id(), child->tag(), childTrans.pos, childTrans.scale, childTrans.angle);
-
-
+	entity->addComponent<CName>("t1");
+	entity->addComponent<CTransform>(Vec2(300, 400));
+	entity->addComponent<CRectangleShape>();
+	entity->addComponent<CSize>();
 }
 void RenderModifier::Update(Editor& editor)
 {
@@ -52,6 +17,7 @@ void RenderModifier::Update(Editor& editor)
 		SetTransform(e);
 		ParentChild(editor, e);
 		if (e->hasComponent<CAnimation>()) e->getComponent<CAnimation>().animation.update();
+		if (e->hasAnyScriptable()) editor.scriptManager.ExecuteEntityScripts(editor, e);
 	}
 
 	if (ImGui::IsKeyPressed(ImGuiKey_E))

@@ -1,5 +1,6 @@
 #include "Inspector.h"
 #include "Editor.h"
+#include <typeinfo>
 
 void Inspector::Init(Editor& editor)
 {
@@ -145,14 +146,14 @@ void Inspector::displayComponents(Editor& editor)
             {
                 for (const auto& model : editor.animationMap)
                 {
-                    
+
                     if (ImGui::Selectable(model.first.c_str()))
                     {
                         if (model.first == "default_rectangle")
                         {
                             if (modelName != "default_rectangle") editor.Save(), editor.selectedEntity->addComponent<CRectangleShape>();
                             if (modelName == "default_circle")  editor.selectedEntity->removeComponent<CCircleShape>();
-                            if (modelName != "default_circle" && modelName != "default_rectangle") editor.selectedEntity->removeComponent<CAnimation>(); 
+                            if (modelName != "default_circle" && modelName != "default_rectangle") editor.selectedEntity->removeComponent<CAnimation>();
                         }
                         else if (model.first == "default_circle")
                         {
@@ -172,4 +173,26 @@ void Inspector::displayComponents(Editor& editor)
             }
         }
     }
+
+    /*if (editor.selectedEntity->hasScriptable<Scriptable>())
+    {
+        for (const auto& script : editor.selectedEntity->m_scriptables)
+        {
+            std::string cname = typeid(*script).name();
+            if (ImGui::CollapsingHeader(cname.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                for (auto& k : script->variableMap)
+                {
+                    auto& valuePtr = k.second; // This is a shared_ptr<std::any>
+                    // Dereference the shared_ptr to access the std::any
+                    const std::any& value = *valuePtr;
+                    if (value.type() == typeid(std::reference_wrapper<float>)) {
+                        // Perform the cast to retrieve the reference
+                        float& floatValue = std::any_cast<std::reference_wrapper<float>>(value).get(); // Get reference
+                        ImGui::InputFloat(k.first.c_str(), &floatValue);
+                    }
+                }
+            }
+        }
+    }*/
 }

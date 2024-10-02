@@ -69,36 +69,6 @@
     <ClCompile Include="Display.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Assets\MainScripts\Components.cpp">
-      <Filter>Source Files\script</Filter>
-    </ClCompile>
-    <ClCompile Include="Assets\MainScripts\Entity.cpp">
-      <Filter>Source Files\script</Filter>
-    </ClCompile>
-    <ClCompile Include="Assets\MainScripts\EntityManager.cpp">
-      <Filter>Source Files\script</Filter>
-    </ClCompile>
-    <ClCompile Include="Assets\MainScripts\Vec2.cpp">
-      <Filter>Source Files\script</Filter>
-    </ClCompile>
-    <ClCompile Include="Assets\MainScripts\Animation.cpp">
-      <Filter>Source Files\script</Filter>
-    </ClCompile>
-    <ClCompile Include="Assets\MainScripts\LightSource.cpp">
-      <Filter>Source Files\script</Filter>
-    </ClCompile>
-    <ClCompile Include="Assets\MainScripts\lineSegment.cpp">
-      <Filter>Source Files\script</Filter>
-    </ClCompile>
-    <ClCompile Include="Assets\MainScripts\ParticleSystem.cpp">
-      <Filter>Source Files\script</Filter>
-    </ClCompile>
-    <ClCompile Include="Assets\MainScripts\SpartialGrid.cpp">
-      <Filter>Source Files\script</Filter>
-    </ClCompile>
-    <ClCompile Include="Assets\MainScripts\Physics.cpp">
-      <Filter>Source Files\script</Filter>
-    </ClCompile>
     <ClCompile Include="RenderModifier.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -107,6 +77,45 @@
     </ClCompile>
     <ClCompile Include="NFD\nfd_common.c">
       <Filter>Source Files\nfd</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\Game\MainScripts\Vec2.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\Game\MainScripts\SpartialGrid.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\Game\MainScripts\lineSegment.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\Game\MainScripts\LightSource.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\Game\MainScripts\Animation.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\Game\MainScripts\Components.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\Game\MainScripts\Physics.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\Game\MainScripts\ParticleSystem.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\Game\MainScripts\Entity.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\Game\MainScripts\EntityManager.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\Game\MainScripts\Grid.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Assets\Game\MainScripts\Scriptable.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="ScriptManager.cpp">
+      <Filter>Source Files\script</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -161,38 +170,47 @@
     <ClInclude Include="Display.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Assets\MainScripts\Components.h">
-      <Filter>Header Files\script</Filter>
-    </ClInclude>
-    <ClInclude Include="Assets\MainScripts\Entity.h">
-      <Filter>Header Files\script</Filter>
-    </ClInclude>
-    <ClInclude Include="Assets\MainScripts\EntityManager.h">
-      <Filter>Header Files\script</Filter>
-    </ClInclude>
-    <ClInclude Include="Assets\MainScripts\Vec2.h">
-      <Filter>Header Files\script</Filter>
-    </ClInclude>
-    <ClInclude Include="Assets\MainScripts\Animation.h">
-      <Filter>Header Files\script</Filter>
-    </ClInclude>
-    <ClInclude Include="Assets\MainScripts\LightSource.h">
-      <Filter>Header Files\script</Filter>
-    </ClInclude>
-    <ClInclude Include="Assets\MainScripts\lineSegment.h">
-      <Filter>Header Files\script</Filter>
-    </ClInclude>
-    <ClInclude Include="Assets\MainScripts\ParticleSystem.h">
-      <Filter>Header Files\script</Filter>
-    </ClInclude>
-    <ClInclude Include="Assets\MainScripts\SpartialGrid.h">
-      <Filter>Header Files\script</Filter>
-    </ClInclude>
-    <ClInclude Include="Assets\MainScripts\Physics.h">
-      <Filter>Header Files\script</Filter>
-    </ClInclude>
     <ClInclude Include="RenderModifier.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\Game\MainScripts\Entity.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\Game\MainScripts\EntityManager.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\Game\MainScripts\Grid.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\Game\MainScripts\LightSource.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\Game\MainScripts\lineSegment.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\Game\MainScripts\ParticleSystem.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\Game\MainScripts\SpartialGrid.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\Game\MainScripts\Vec2.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\Game\MainScripts\Components.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\Game\MainScripts\Animation.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\Game\MainScripts\Physics.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\Game\MainScripts\Scriptable.hpp">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="ScriptManager.h">
+      <Filter>Header Files\script</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

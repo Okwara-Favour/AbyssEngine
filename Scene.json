@@ -36,6 +36,33 @@
     "ENTITY": [
         [
             {
+                "ENTITY": [
+                    [
+                        {
+                            "HASCHILDREN": false,
+                            "NAME": "Rectangle4",
+                            "PX": 678.0,
+                            "PY": 542.0,
+                            "R": 0.0,
+                            "RENDER": "Rectangle",
+                            "SX": 1.0,
+                            "SY": 1.0,
+                            "TAG": "Default"
+                        },
+                        {
+                            "HASCHILDREN": false,
+                            "NAME": "Rectangle3",
+                            "PX": 891.0,
+                            "PY": 300.0,
+                            "R": 0.0,
+                            "RENDER": "Rectangle",
+                            "SX": 1.0,
+                            "SY": 1.0,
+                            "TAG": "Default"
+                        }
+                    ]
+                ],
+                "HASCHILDREN": true,
                 "NAME": "Rectangle0",
                 "PX": 347.0,
                 "PY": 377.0,
@@ -46,6 +73,7 @@
                 "TAG": "Default"
             },
             {
+                "HASCHILDREN": false,
                 "NAME": "Rectangle1",
                 "PX": 488.0,
                 "PY": 153.0,
@@ -56,29 +84,10 @@
                 "TAG": "Default"
             },
             {
+                "HASCHILDREN": false,
                 "NAME": "Rectangle2",
                 "PX": 702.0,
                 "PY": 192.0,
-                "R": 0.0,
-                "RENDER": "Rectangle",
-                "SX": 1.0,
-                "SY": 1.0,
-                "TAG": "Default"
-            },
-            {
-                "NAME": "Rectangle3",
-                "PX": 891.0,
-                "PY": 300.0,
-                "R": 0.0,
-                "RENDER": "Rectangle",
-                "SX": 1.0,
-                "SY": 1.0,
-                "TAG": "Default"
-            },
-            {
-                "NAME": "Rectangle4",
-                "PX": 678.0,
-                "PY": 542.0,
                 "R": 0.0,
                 "RENDER": "Rectangle",
                 "SX": 1.0,

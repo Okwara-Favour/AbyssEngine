@@ -41,10 +41,12 @@ void EngineSettings::Update(Editor& editor)
                 {
                     if (item == "Undo")
                     {
+                        editor.parentEntity = nullptr;
                         editor.Undo();
                     }
                     if (item == "Redo")
                     {
+                        editor.parentEntity = nullptr;
                         editor.Redo();
                     }
                     // Handle edit action selection
@@ -59,15 +61,33 @@ void EngineSettings::Update(Editor& editor)
             {
                 if (item != "Add" && ImGui::MenuItem(item.c_str()))
                 {
+                    if (item == "Make Independent")
+                    {
+                        MakeIndependent(editor, editor.selectedEntity);
+                    }
+                    if (item == "Make Child")
+                    {
+                        if (editor.parentEntity && editor.selectedEntity) 
+                        {
+                            ChangeParent(editor, editor.selectedEntity, editor.parentEntity);
+                        }
+                    }
+                    if (item == "Make Parent")
+                    {
+                        if (editor.selectedEntity) editor.parentEntity = editor.selectedEntity;
+                    }
                     if (item == "Remove")
                     {
-                        editor.Save();
-                        if (editor.parentEntity && editor.parentEntity->id() == editor.selectedEntity->id() && editor.parentEntity->tag() == editor.selectedEntity->tag())
+                        if (editor.selectedEntity)
                         {
-                            editor.parentEntity = nullptr;
+                            editor.Save();
+                            if (editor.parentEntity && editor.parentEntity->id() == editor.selectedEntity->id() && editor.parentEntity->tag() == editor.selectedEntity->tag())
+                            {
+                                editor.parentEntity = nullptr;
+                            }
+                            DeleteEntity(editor, editor.selectedEntity);
+                            editor.selectedEntity = nullptr;
                         }
-                        DeleteEntity(editor, editor.selectedEntity);
-                        editor.selectedEntity = nullptr;
                     }
                 }
                 if (item == "Add" && ImGui::BeginMenu("Add"))
@@ -121,6 +141,12 @@ void EngineSettings::createEntity(Editor& editor, const std::string& type)
         std::string name = "Rectangle" + std::to_string(entity->id());
         entity->addComponent<CName>(name);
         entity->addComponent<CRectangleShape>();
+    }
+    if (type == "Circle")
+    {
+        std::string name = "Circle" + std::to_string(entity->id());
+        entity->addComponent<CName>(name);
+        entity->addComponent<CCircleShape>();
     }
 }
 
@@ -203,6 +229,7 @@ void EngineSettings::MakeIndependent(Editor& editor, const std::shared_ptr<Entit
 
 void EngineSettings::DeleteEntity(Editor& editor, const std::shared_ptr<Entity>& entity)
 {
+    if (!entity) return;
     MakeIndependent(editor, entity);
     if (entity->hasComponent<CChildren>())
     {

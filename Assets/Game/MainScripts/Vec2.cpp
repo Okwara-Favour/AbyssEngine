@@ -241,3 +241,49 @@ Vec2& Vec2::makeWholeNumber()
     y = (int)y;
     return *this;
 }
+
+void Vec2::Lua(sol::state& lua)
+{
+    lua.new_usertype<Vec2>("Vec2",
+        // Constructors
+        sol::constructors<Vec2(), Vec2(float, float)>(),
+        // Member variables
+        "x", &Vec2::x,
+        "y", &Vec2::y,
+        "pi", &Vec2::pi,
+        // Operators (overloaded in Lua)
+        sol::meta_function::addition, sol::overload(
+            static_cast<Vec2(Vec2::*)(const Vec2&) const>(&Vec2::operator+),
+            static_cast<Vec2(Vec2::*)(float) const>(&Vec2::operator+)
+        ),
+        sol::meta_function::subtraction, sol::overload(
+            static_cast<Vec2(Vec2::*)(const Vec2&) const>(&Vec2::operator-),
+            static_cast<Vec2(Vec2::*)(float) const>(&Vec2::operator-)
+        ),
+        sol::meta_function::multiplication, sol::overload(
+            static_cast<Vec2(Vec2::*)(float) const>(&Vec2::operator*),
+            static_cast<float(Vec2::*)(const Vec2&) const>(&Vec2::operator*)
+        ),
+        sol::meta_function::division, sol::overload(
+            static_cast<Vec2(Vec2::*)(float) const>(&Vec2::operator/),
+            static_cast<Vec2(Vec2::*)(const Vec2&) const>(&Vec2::operator/)
+        ),
+        sol::meta_function::equal_to, &Vec2::operator==,
+        "abs", &Vec2::abs,
+        "add", sol::overload(
+            static_cast<Vec2 & (Vec2::*)(const Vec2&)>(&Vec2::add),
+            static_cast<Vec2 & (Vec2::*)(float)>(&Vec2::add)
+        ),
+        "scale", &Vec2::scale,
+        "rotate", &Vec2::rotate,
+        "dist", &Vec2::dist,
+        "angleFromPoint", &Vec2::angleFromPoint,
+        "angleBetweenTwoPoints", &Vec2::angleBetweenTwoPoints,
+        "length", &Vec2::length,
+        "normalize", &Vec2::normalize,
+        "speedVector", &Vec2::speedVector,
+        "setVec2", &Vec2::setVec2,
+        "makeWholeNumber", &Vec2::makeWholeNumber,
+        "toString", &Vec2::toString
+    );
+}

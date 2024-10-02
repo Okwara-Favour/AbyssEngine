@@ -7,10 +7,29 @@ CTransform::CTransform(const Vec2& p, const Vec2& sc, float a)
 	,angle(a)
 {}
 
+void CTransform::Lua(sol::state& lua)
+{
+	lua.new_usertype<CTransform>("CTransform",
+		sol::constructors<CTransform(), CTransform(const Vec2&, const Vec2&, float)>(),
+		"pos", &CTransform::pos,
+		"prevPos", &CTransform::prevPos,
+		"scale", &CTransform::scale,
+		"angle", &CTransform::angle
+	);
+}
+
 CName::CName() {}
 CName::CName(const std::string& n)
 	:name(n)
 {}
+
+void CName::Lua(sol::state& lua)
+{
+	lua.new_usertype<CName>("CName",
+		sol::constructors<CName(), CName(const std::string&)>(),
+		"name", &CName::name
+	);
+}
 
 CRectangleShape::CRectangleShape()
 	:rectangle(sf::Vector2f(width, height))
@@ -21,6 +40,14 @@ CRectangleShape::CRectangleShape()
 CRectangleShape::CRectangleShape(sf::RectangleShape& rect)
 	:rectangle(rect) {}
 
+void CRectangleShape::Lua(sol::state& lua)
+{
+	lua.new_usertype<CRectangleShape>("CRectangleShape",
+		sol::constructors<CRectangleShape()>(),
+		"rectangle", &CRectangleShape::rectangle
+	);
+}
+
 CCircleShape::CCircleShape()
 	:circle(radius)
 {
@@ -29,6 +56,14 @@ CCircleShape::CCircleShape()
 }
 CCircleShape::CCircleShape(sf::CircleShape& cir)
 	:circle(cir) {}
+
+void CCircleShape::Lua(sol::state& lua)
+{
+	lua.new_usertype<CCircleShape>("CCirlceShape",
+		sol::constructors<CCircleShape()>(),
+		"circle", &CCircleShape::circle
+	);
+}
 
 
 CCollision::CCollision() {}
@@ -40,6 +75,14 @@ CSize::CSize() {}
 CSize::CSize(const Vec2& s)
 	:size(s)
 {}
+void CSize::Lua(sol::state& lua)
+{
+	lua.new_usertype<CSize>("CSize",
+		sol::constructors<CSize(), CSize(const Vec2&)>(),
+		"size", &CSize::size
+	);
+}
+
 
 CScore::CScore() {}
 CScore::CScore(int s)

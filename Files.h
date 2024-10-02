@@ -1,7 +1,7 @@
 #pragma once
 #include "AbstractEngineTab.hpp"
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 class Files : public AbstractEngineTab
 {
 	sf::Texture texture;
@@ -16,6 +16,7 @@ class Files : public AbstractEngineTab
 	void OpenDirectory(Editor& editor);
 	void OpenFile(const fs::path& path);
 	void OpenImage(const fs::path& path);
+	void LoadScripts(Editor& editor);
 	void RunDesiredApplication(const fs::path& path);
 	static void runCommand(const std::string& command);
 public:

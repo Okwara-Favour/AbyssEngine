@@ -70,6 +70,22 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>SOL\include;LUA\include;$(IncludePath)</IncludePath>
+    <LibraryPath>LUA;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>SOL\include;LUA\include;$(IncludePath)</IncludePath>
+    <LibraryPath>LUA;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>SOL\include;LUA\include;$(IncludePath)</IncludePath>
+    <LibraryPath>LUA;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>SOL\include;LUA\include;$(IncludePath)</IncludePath>
+    <LibraryPath>LUA;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -111,6 +127,8 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>Assets\Game\SFML\include;$(SolutionDir)\IMGUI\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -128,9 +146,10 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>Assets\Game\SFML\include;$(SolutionDir)\IMGUI\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <EnableModules>
       </EnableModules>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -151,6 +170,7 @@
     <ClCompile Include="Assets\Game\MainScripts\lineSegment.cpp" />
     <ClCompile Include="Assets\Game\MainScripts\ParticleSystem.cpp" />
     <ClCompile Include="Assets\Game\MainScripts\Physics.cpp" />
+    <ClCompile Include="Assets\Game\MainScripts\Scriptable.cpp" />
     <ClCompile Include="Assets\Game\MainScripts\SpartialGrid.cpp" />
     <ClCompile Include="Assets\Game\MainScripts\Vec2.cpp" />
     <ClCompile Include="Console.cpp" />
@@ -169,6 +189,7 @@
     <ClCompile Include="NFD\nfd_common.c" />
     <ClCompile Include="NFD\nfd_win.cpp" />
     <ClCompile Include="RenderModifier.cpp" />
+    <ClCompile Include="ScriptManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AbstractEngineTab.hpp" />
@@ -181,6 +202,7 @@
     <ClInclude Include="Assets\Game\MainScripts\lineSegment.h" />
     <ClInclude Include="Assets\Game\MainScripts\ParticleSystem.h" />
     <ClInclude Include="Assets\Game\MainScripts\Physics.h" />
+    <ClInclude Include="Assets\Game\MainScripts\Scriptable.hpp" />
     <ClInclude Include="Assets\Game\MainScripts\SpartialGrid.h" />
     <ClInclude Include="Assets\Game\MainScripts\Vec2.h" />
     <ClInclude Include="Console.h" />
@@ -200,6 +222,7 @@
     <ClInclude Include="IMGUI\imstb_truetype.h" />
     <ClInclude Include="Inspector.h" />
     <ClInclude Include="RenderModifier.h" />
+    <ClInclude Include="ScriptManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

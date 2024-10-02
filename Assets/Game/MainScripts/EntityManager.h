@@ -6,6 +6,7 @@
 #include <string>
 #include "Entity.h"
 
+typedef std::shared_ptr<Entity> GameObject;
 typedef std::vector<std::shared_ptr<Entity>> EntityVec;
 typedef std::map<std::string, EntityVec> EntityMap;
 typedef std::map<std::string, std::shared_ptr<Entity>> UniqueEntityMap;
@@ -31,4 +32,5 @@ public:
 	void destroyEntity(std::shared_ptr<Entity> e);
 	void update();
 	void copyTo(EntityManager& other);
+	static void Lua(sol::state& lua);
 };

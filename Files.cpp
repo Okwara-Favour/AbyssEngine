@@ -11,6 +11,24 @@ void Files::Init(Editor& editor)
 		editor.HandleError("SEVERE WARNING: 'Assets' directory not found!");
 		return;
 	}
+
+	LoadScripts(editor);
+
+	auto entity = editor.entityManager.addEntity("STest");
+	entity->addComponent<CName>("TestSc1");
+	entity->addComponent<CTransform>();
+	entity->addComponent<CSize>();
+	entity->addComponent<CRectangleShape>();
+	entity->addScriptable(Scriptable("Example"));
+	editor.scriptManager.ExecuteEntityScripts(editor, entity);
+
+	auto entity2 = editor.entityManager.addEntity("STest");
+	entity2->addComponent<CName>("TestSc2");
+	entity2->addComponent<CTransform>();
+	entity2->addComponent<CSize>();
+	entity2->addComponent<CRectangleShape>();
+	entity2->addScriptable(Scriptable("Example"));
+	editor.scriptManager.ExecuteEntityScripts(editor, entity2);
 }
 void Files::Update(Editor& editor)
 {
@@ -200,4 +218,18 @@ void Files::MakeAnimation(Editor& editor)
 		popUp = false;
 	}
 	ImGui::End();
+}
+
+void Files::LoadScripts(Editor& editor)
+{
+	editor.scriptManager.lua.new_usertype<Editor>("Editor",
+		"HandleError", &Editor::HandleError, // Bind the HandleError method
+		"entityManager", &Editor::entityManager
+	);
+
+	// Bind the editor instance to Lua
+	editor.scriptManager.lua["editor"] = &editor; // Set 'editor' as a global in Lua
+	// Create the command that calls HandleError
+	editor.scriptManager.LoadScript("Example.lua", editor.currentDirectory);
+		// Execute the Lua command
 }

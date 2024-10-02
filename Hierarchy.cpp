@@ -42,6 +42,10 @@ void Hierarchy::DisplayEntities(Editor& editor)
             ImGui::SameLine();
         }
 
+        if (editor.parentEntity && editor.parentEntity->id() == entity->id()) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.2f, 0.2f, 1.0f));
+        }
+
         if (ImGui::Selectable(entity->getComponent<CName>().name.c_str(), editor.selectedEntity && editor.selectedEntity->id() == entity->id(), ImGuiSelectableFlags_AllowDoubleClick))
         {
             if (editor.selectedEntity && editor.selectedEntity->id() != entity->id()) editor.Save();
@@ -54,6 +58,11 @@ void Hierarchy::DisplayEntities(Editor& editor)
                 editingEntity = entity;
             }
         }
+
+        if (editor.parentEntity && editor.parentEntity->id() == entity->id()) {
+            ImGui::PopStyleColor();
+        }
+
         editEntityName(editor, entity);
         ParentChildDropdown(editor, entity);
         
@@ -82,6 +91,11 @@ void Hierarchy::ParentChildDropdown(Editor& editor, std::shared_ptr<Entity> enti
                     }
                     ImGui::SameLine();
                 }
+
+                if (editor.parentEntity && editor.parentEntity->id() == childEntity->id()) {
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.2f, 0.2f, 1.0f));
+                }
+
                 if (ImGui::Selectable(childEntity->getComponent<CName>().name.c_str(), editor.selectedEntity && editor.selectedEntity->id() == childEntity->id()))
                 {
                     clickCount++;
@@ -98,6 +112,11 @@ void Hierarchy::ParentChildDropdown(Editor& editor, std::shared_ptr<Entity> enti
                     clock.restart();
                     if (doubleClick) clickCount = 0;
                 }
+
+                if (editor.parentEntity && editor.parentEntity->id() == childEntity->id()) {
+                    ImGui::PopStyleColor();
+                }
+
                 editEntityName(editor, childEntity);
                 ParentChildDropdown(editor, childEntity);
                 ImGui::PopID();

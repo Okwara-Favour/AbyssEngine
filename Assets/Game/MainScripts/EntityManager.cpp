@@ -111,6 +111,14 @@ void EntityManager::update()
 
 	for (auto& e : m_toDestroy)
 	{
+		if (e->hasAnyScriptable())
+		{
+			std::cout << "Yes one here" << std::endl;
+			for (auto& sc : e->m_scriptables)
+			{
+				(*sc.second.destroy) = true;
+			}
+		}
 		auto entityIt = std::find(m_entities.begin(), m_entities.end(), e);
 		if (entityIt != m_entities.end()) {
 			m_entities.erase(entityIt);
@@ -157,4 +165,26 @@ void EntityManager::copyTo(EntityManager& other)
 		}
 	}
 	other.m_toAdd = deepCopyEntityVec(m_toAdd);
+}
+
+void EntityManager::Lua(sol::state& lua)
+{
+	lua.new_usertype<EntityVec>("EntityVec",
+		"size", &EntityVec::size,                      // Access size of the vector
+		"get", [](EntityVec& vec, size_t i) {          // Get element by index
+			return i < vec.size() ? vec[i] : nullptr;  // Return nullptr if out of bounds
+		}
+	);
+	// Bind EntityManager and its methods
+	lua.new_usertype<EntityManager>("EntityManager",
+		"addEntity", &EntityManager::addEntity,
+		"getEntity", &EntityManager::getEntity,
+		"getEntities", sol::overload(
+			static_cast<EntityVec & (EntityManager::*)()>(&EntityManager::getEntities),
+			static_cast<EntityVec & (EntityManager::*)(const std::string&)>(&EntityManager::getEntities)
+		),
+		"changeTag", &EntityManager::changeTag,
+		"destroyEntity", &EntityManager::destroyEntity,
+		"update", &EntityManager::update
+	);
 }

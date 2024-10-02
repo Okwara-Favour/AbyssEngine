@@ -2,8 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include "imgui.h"
 #include "imgui-SFML.h"
-#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
-#include <experimental/filesystem>
+#include <filesystem>
 
 class Editor;
 
@@ -14,4 +13,6 @@ public:
 	virtual void Init(Editor& editor) = 0;
 	virtual void Update(Editor& editor) = 0;
 	virtual void HandleError(const std::string& errorString) {};
+	virtual void OnStartGame() {};
+	virtual void OnEndGame() {};
 };

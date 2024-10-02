@@ -1,7 +1,7 @@
 #pragma once
 #include "AbstractEngineTab.hpp"
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 class Inspector : public AbstractEngineTab
 {

@@ -3,8 +3,11 @@
 #include <tuple>
 #include <typeinfo>
 #include "Components.h"
+#include "Scriptable.hpp"
 
 class EntityManager;
+class ScriptManager;
+class Inspector;
 
 typedef std::tuple
 <
@@ -28,6 +31,7 @@ typedef std::tuple
 	CLightSource
 > ComponentTuple;
 
+typedef std::map<std::string, Scriptable> Scripts;
 
 class Entity
 {
@@ -43,7 +47,10 @@ class Entity
 
 	void			  setTag(const std::string& tag);
 	void			  destroy();
-
+protected:
+	friend Inspector;
+	friend ScriptManager;
+	Scripts		   m_scriptables;
 public:
 	size_t			  id()		 const;
 	bool			  isAlive()	 const;
@@ -85,5 +92,49 @@ public:
 	{
 		std::get<C>(m_components) = C();
 	}
+
+	void addScriptable(const Scriptable& script) {
+		m_scriptables[script.name] = script;
+	}
+
+	Scriptable& getScriptable(const std::string& name)
+	{
+		if (m_scriptables.find(name) != m_scriptables.end())
+		{
+			return m_scriptables[name];
+		}
+		throw std::runtime_error("Error - Scriptable '" + name + "' is not present.");
+	}
+
+	bool hasScriptable(const std::string& name)
+	{
+		if (m_scriptables.find(name) != m_scriptables.end())
+		{
+			return true;
+		}
+		return false;
+	}
+
+	bool hasAnyScriptable()
+	{
+		return !m_scriptables.empty();
+	}
+
+	void removeScriptable(const std::string& name)
+	{
+		auto& scriptable = getScriptable(name);
+		scriptable.destroy = std::make_shared<bool>(true);
+		m_scriptables.erase(name);
+	}
+
+	void UpdateScripts()
+	{
+		for (const auto& script : m_scriptables)
+		{
+			//script->Update();
+		}
+	}
+
+	static void Lua(sol::state& lua);
 };
 

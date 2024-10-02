@@ -41,7 +41,7 @@ void Display::Update(Editor& editor)
 			displayTexture.draw(e->getComponent<CAnimation>().animation.getSprite());
 		}
 	}
-	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered() && !entityClicked && editor.selectedEntity)
+	if (editor.isMouseInTab() && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered() && !entityClicked && editor.selectedEntity)
 	{
 		editor.Save();
 		editor.selectedEntity = nullptr;
@@ -150,7 +150,7 @@ void Display::DisplaySelected(std::shared_ptr<Entity>& entity, std::shared_ptr<E
 			return;
 		}
 		auto& Size = entity->getComponent<CSize>();
-		Size.size = Vec2(2, 2);
+		Size.size = Vec2(5, 5);
 		auto& Trans = entity->getComponent<CTransform>();
 		sf::RectangleShape rect(sf::Vector2f(Size.size.x, Size.size.y));
 		rect.setOrigin(Size.size.x / 2, Size.size.y / 2);
@@ -317,6 +317,20 @@ void Display::MenuTab(Editor& editor)
 				}
 			}
 			ImGui::EndMenu();
+		}
+		if (editor.gameMode)
+		{
+			if (ImGui::Button("Quit"))
+			{
+				editor.QuitGame();
+			}
+		}
+		else 
+		{
+			if (ImGui::Button("Play"))
+			{
+				editor.StartGame();
+			}
 		}
 	}
 	ImGui::EndMenuBar();

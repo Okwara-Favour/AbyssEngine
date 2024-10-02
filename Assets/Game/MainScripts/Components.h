@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <SFML/Graphics.hpp>
+#include <sol/sol.hpp>
 #include "Vec2.h"
 #include "Animation.h"
 #include "ParticleSystem.h"
@@ -12,18 +13,27 @@ public:
 	bool has = false;
 };
 
-class CTransform:public Component
+
+class Editor;
+
+class CTransform :public Component
 {
+protected:
+	friend Editor;
+	static void Lua(sol::state& lua);
 public:
-	Vec2 pos		= { 0, 0 };
-	Vec2 prevPos	= { 0, 0 };
-	Vec2 scale		= { 1, 1 };
+	Vec2 pos = { 0, 0 };
+	Vec2 prevPos = { 0, 0 };
+	Vec2 scale = { 1, 1 };
 	float angle = 0;
-	CTransform(const Vec2& p = Vec2(0,0), const Vec2& sc = Vec2(1,1), float a = 0);
+	CTransform(const Vec2& p = Vec2(0, 0), const Vec2& sc = Vec2(1, 1), float a = 0);
 };
 
 class CName :public Component
 {
+protected:
+	friend Editor;
+	static void Lua(sol::state& lua);
 public:
 	std::string name = "None";
 	CName();
@@ -33,6 +43,9 @@ public:
 class CRectangleShape :public Component
 {
 	float width = 30, height = 30;
+protected:
+	friend Editor;
+	static void Lua(sol::state& lua);
 public:
 	sf::RectangleShape rectangle;
 	CRectangleShape();
@@ -42,6 +55,9 @@ public:
 class CCircleShape :public Component
 {
 	float radius = 15;
+protected:
+	friend Editor;
+	static void Lua(sol::state& lua);
 public:
 	sf::CircleShape circle;
 	CCircleShape();
@@ -58,6 +74,9 @@ public:
 
 class CSize :public Component
 {
+protected:
+	friend Editor;
+	static void Lua(sol::state& lua);
 public:
 	Vec2 size = {30, 30 };
 	CSize();
