@@ -14,9 +14,9 @@ class Files : public AbstractEngineTab
 	fs::path currentFile;
 	void MakeAnimation(Editor& editor);
 	void OpenDirectory(Editor& editor);
-	void OpenFile(const fs::path& path);
+	void OpenFile(Editor& editor, const fs::path& path);
 	void OpenImage(const fs::path& path);
-	void LoadScripts(Editor& editor);
+	void LoadScripts(Editor& editor, const std::string& filename, const fs::path& directory);
 	void RunDesiredApplication(const fs::path& path);
 	static void runCommand(const std::string& command);
 public:

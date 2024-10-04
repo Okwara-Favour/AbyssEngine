@@ -12,7 +12,7 @@ public:
 	virtual ~AbstractEngineTab() = default;
 	virtual void Init(Editor& editor) = 0;
 	virtual void Update(Editor& editor) = 0;
-	virtual void HandleError(const std::string& errorString) {};
+	virtual void ConsoleText(const std::string& errorString) {};
 	virtual void OnStartGame() {};
 	virtual void OnEndGame() {};
 };

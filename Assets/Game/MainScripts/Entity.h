@@ -106,6 +106,11 @@ public:
 		throw std::runtime_error("Error - Scriptable '" + name + "' is not present.");
 	}
 
+	const std::map<std::string, Scriptable>& getScriptables()
+	{
+		return m_scriptables;
+	}
+
 	bool hasScriptable(const std::string& name)
 	{
 		if (m_scriptables.find(name) != m_scriptables.end())
@@ -123,7 +128,7 @@ public:
 	void removeScriptable(const std::string& name)
 	{
 		auto& scriptable = getScriptable(name);
-		scriptable.destroy = std::make_shared<bool>(true);
+		(*scriptable.destroy) = true;
 		m_scriptables.erase(name);
 	}
 

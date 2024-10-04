@@ -27,11 +27,11 @@ void Inspector::Update(Editor& editor)
 
     if (ImGui::IsKeyPressed(ImGuiKey_E))
     {
-        editor.HandleError(std::to_string(editor.animationMap.size()));
+        editor.ConsoleText(std::to_string(editor.animationMap.size()));
         /*
         * for (auto& e : textureMap)
         {
-            editor.HandleError(e.first);
+            editor.ConsoleText(e.first);
         }
         */
     }
@@ -76,6 +76,14 @@ void Inspector::handleComponents(Editor& editor)
                 }
             }
         }
+        for (const auto& scriptName : editor.scriptManager.environmentNames)
+        {
+            if (ImGui::Selectable(scriptName.c_str()))
+            {
+                editor.Save();
+                editor.selectedEntity->addScriptable(Scriptable(scriptName));
+            }
+        }
         ImGui::EndCombo();
     }
 
@@ -98,6 +106,15 @@ void Inspector::handleComponents(Editor& editor)
                     if (editor.selectedEntity->hasComponent<CCircleShape>())editor.selectedEntity->removeComponent<CCircleShape>();
                     if (editor.selectedEntity->hasComponent<CAnimation>())editor.selectedEntity->removeComponent<CAnimation>();
                 }
+            }
+        }
+
+        for (const auto& scriptName : editor.scriptManager.environmentNames)
+        {
+            if (ImGui::Selectable(scriptName.c_str()))
+            {
+                editor.Save();
+                editor.selectedEntity->removeScriptable(scriptName);
             }
         }
         ImGui::EndCombo();
@@ -185,7 +202,55 @@ void Inspector::displayComponents(Editor& editor)
                     for (auto& k : script.second.variableMap)
                     {
                         auto& varValue = k.second;
-                        if (varValue.type() == typeid(std::string))
+                        if (varValue.type() == typeid(int))
+                        {
+                            int intValue = std::any_cast<int>(varValue);
+                            ImGui::InputInt(k.first.c_str(), &intValue);
+                            varValue = std::make_any<int>(intValue);
+                        }
+                        else if (varValue.type() == typeid(unsigned int))
+                        {
+                            unsigned int uintValue = std::any_cast<unsigned int>(varValue);
+                            ImGui::InputScalar(k.first.c_str(), ImGuiDataType_U32, &uintValue);
+                            varValue = std::make_any<unsigned int>(uintValue);
+                        }
+                        else if (varValue.type() == typeid(float))
+                        {
+                            float floatValue = std::any_cast<float>(varValue);
+                            ImGui::InputFloat(k.first.c_str(), &floatValue);
+                            varValue = std::make_any<float>(floatValue);
+                        }
+                        else if (varValue.type() == typeid(double))
+                        {
+                            double doubleValue = std::any_cast<double>(varValue);
+                            ImGui::InputDouble(k.first.c_str(), &doubleValue);
+                            varValue = std::make_any<double>(doubleValue);
+                        }
+                        else if (varValue.type() == typeid(long))
+                        {
+                            long longValue = std::any_cast<long>(varValue);
+                            ImGui::InputScalar(k.first.c_str(), ImGuiDataType_S64, &longValue);
+                            varValue = std::make_any<long>(longValue);
+                        }
+                        else if (varValue.type() == typeid(unsigned long))
+                        {
+                            unsigned long ulongValue = std::any_cast<unsigned long>(varValue);
+                            ImGui::InputScalar(k.first.c_str(), ImGuiDataType_U64, &ulongValue);
+                            varValue = std::make_any<unsigned long>(ulongValue);
+                        }
+                        else if (varValue.type() == typeid(long long))
+                        {
+                            long long longlongValue = std::any_cast<long long>(varValue);
+                            ImGui::InputScalar(k.first.c_str(), ImGuiDataType_S64, &longlongValue);
+                            varValue = std::make_any<long long>(longlongValue);
+                        }
+                        else if (varValue.type() == typeid(unsigned long long))
+                        {
+                            unsigned long long ulonglongValue = std::any_cast<unsigned long long>(varValue);
+                            ImGui::InputScalar(k.first.c_str(), ImGuiDataType_U64, &ulonglongValue);
+                            varValue = std::make_any<unsigned long long>(ulonglongValue);
+                        }
+                        else if (varValue.type() == typeid(std::string))
                         {
                             std::string strValue = std::any_cast<std::string>(varValue);
                             std::array<char, 256> buffer;
@@ -193,6 +258,13 @@ void Inspector::displayComponents(Editor& editor)
                             buffer[strLength] = '\0';
                             ImGui::InputText(k.first.c_str(), buffer.data(), buffer.size());
                             varValue = std::make_any<std::string>(buffer.data());
+                        }
+                        else if (varValue.type() == typeid(Vec2))
+                        {
+                            Vec2 vec2Value = std::any_cast<Vec2>(varValue);
+                            float vecArray[2] = { vec2Value.x, vec2Value.y };
+                            ImGui::InputFloat2(k.first.c_str(), vecArray);
+                            varValue = std::make_any<Vec2>(Vec2(vecArray[0], vecArray[1]));
                         }
                     }
                 }

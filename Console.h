@@ -8,5 +8,5 @@ class Console : public AbstractEngineTab
 public:
 	void Init(Editor& editor) override;
 	void Update(Editor& editor) override;
-	void HandleError(const std::string& errorString) override;
+	void ConsoleText(const std::string& errorString) override;
 };

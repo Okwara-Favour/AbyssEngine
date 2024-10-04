@@ -111,7 +111,6 @@ void EntityManager::update()
 	{
 		if (e->hasAnyScriptable())
 		{
-			std::cout << "Yes one here" << std::endl;
 			for (auto& sc : e->m_scriptables)
 			{
 				(*sc.second.destroy) = true;

@@ -8,27 +8,27 @@ void Files::Init(Editor& editor)
 {
 	editor.currentDirectory /= DIR;
 	if (!fs::exists(editor.currentDirectory) || !fs::is_directory(editor.currentDirectory)) {
-		editor.HandleError("SEVERE WARNING: 'Assets' directory not found!");
+		editor.ConsoleText("SEVERE WARNING: 'Assets' directory not found!");
 		return;
 	}
 
-	LoadScripts(editor);
+	//LoadScripts(editor);
 
 	auto entity = editor.entityManager.addEntity("STest");
 	entity->addComponent<CName>("TestSc1");
 	entity->addComponent<CTransform>();
 	entity->addComponent<CSize>();
 	entity->addComponent<CRectangleShape>();
-	entity->addScriptable(Scriptable("Example"));
-	editor.scriptManager.ExecuteEntityScripts(editor, entity);
+	//entity->addScriptable(Scriptable("Example"));
+	//editor.scriptManager.ExecuteEntityScripts(editor, entity);
 
 	auto entity2 = editor.entityManager.addEntity("STest");
 	entity2->addComponent<CName>("TestSc2");
 	entity2->addComponent<CTransform>();
 	entity2->addComponent<CSize>();
 	entity2->addComponent<CRectangleShape>();
-	entity2->addScriptable(Scriptable("Example"));
-	editor.scriptManager.ExecuteEntityScripts(editor, entity2);
+	//entity2->addScriptable(Scriptable("Example"));
+	//editor.scriptManager.ExecuteEntityScripts(editor, entity2);
 }
 void Files::Update(Editor& editor)
 {
@@ -105,8 +105,8 @@ void Files::OpenDirectory(Editor& editor)
 				if (extension == ".png" || extension == ".PNG") {
 					OpenImage(entry);
 				}
-				else if (extension == ".txt" || extension == ".h" || extension == ".hpp" || extension == ".cpp") {
-					OpenFile(entry);
+				else if (extension == ".lua" || extension == ".txt" || extension == ".h" || extension == ".hpp" || extension == ".cpp") {
+					OpenFile(editor, entry);
 				}
 				else 
 				{
@@ -117,7 +117,7 @@ void Files::OpenDirectory(Editor& editor)
 	}
 }
 
-void Files::OpenFile(const fs::path& path)
+void Files::OpenFile(Editor& editor, const fs::path& path)
 {
 	std::ifstream file(path);
 
@@ -131,7 +131,10 @@ void Files::OpenFile(const fs::path& path)
 	{
 		RunDesiredApplication(path);
 	}
-
+	if (path.extension().string() == ".lua" && ImGui::Button("Add Script"))
+	{
+		LoadScripts(editor, path.filename().string(), editor.currentDirectory);
+	}
 	if (fs::file_size(path) > maxSizeBytes) {
 		ImGui::Text("File is too large to display.");
 		ImGui::End();
@@ -220,16 +223,13 @@ void Files::MakeAnimation(Editor& editor)
 	ImGui::End();
 }
 
-void Files::LoadScripts(Editor& editor)
+void Files::LoadScripts(Editor& editor, const std::string& filename, const fs::path& directory)
 {
-	editor.scriptManager.lua.new_usertype<Editor>("Editor",
-		"HandleError", &Editor::HandleError, // Bind the HandleError method
-		"entityManager", &Editor::entityManager
-	);
-
-	// Bind the editor instance to Lua
-	editor.scriptManager.lua["editor"] = &editor; // Set 'editor' as a global in Lua
-	// Create the command that calls HandleError
-	editor.scriptManager.LoadScript("Example.lua", editor.currentDirectory);
-		// Execute the Lua command
+	if (editor.scriptManager.hasScript(editor.scriptManager.removeLuaExt(filename)))
+	{
+		editor.ConsoleText("Script: " + filename + " already loaded and processed");
+		editor.ConsoleText("Use scripts settings for changes");
+		return;
+	}
+	editor.scriptManager.LoadScript(editor, filename, directory);
 }

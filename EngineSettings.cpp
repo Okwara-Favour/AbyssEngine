@@ -106,6 +106,24 @@ void EngineSettings::Update(Editor& editor)
                 }
                 ImGui::EndMenu();
             }
+            if (ImGui::BeginMenu("ScriptManager"))
+            {
+                for (const auto& item : scriptList)
+                {
+                    if (item == "Rebuild" && ImGui::BeginMenu("Rebuild"))
+                    {
+                        for (const auto& scriptItem : editor.scriptManager.environmentNames)
+                        {
+                            if (ImGui::MenuItem(scriptItem.c_str()))
+                            {
+                                editor.scriptManager.ResetScript(editor, (scriptItem + ".lua"), editor.scriptManager.scriptsDirectoryMap[scriptItem]);
+                            }
+                        }
+                        ImGui::EndMenu();
+                    }
+                }
+                ImGui::EndMenu();
+            }
         }
         if (ImGui::BeginMenu("Window"))
         {
@@ -160,7 +178,7 @@ void EngineSettings::ImportFiles(Editor& editor)
     if (result == NFD_OKAY) // If the user selected a file
     {
         iss << "User selected file: " << outPath;
-        editor.HandleError(iss.str());
+        editor.ConsoleText(iss.str());
         iss.str("");
         // You can use fs to copy the file to the desired directory
         fs::path sourceFile(outPath);
@@ -170,23 +188,23 @@ void EngineSettings::ImportFiles(Editor& editor)
         {
             fs::copy(sourceFile, targetDirectory / sourceFile.filename(),
                 fs::copy_options::overwrite_existing);
-            editor.HandleError("File imported successfully.");
+            editor.ConsoleText("File imported successfully.");
         }
         catch (const fs::filesystem_error& e)
         {
             iss << "Error copying file: " << e.what();
-            editor.HandleError(iss.str());
+            editor.ConsoleText(iss.str());
             iss.str("");
         }
     }
     else if (result == NFD_CANCEL) // If the user canceled the file selection
     {
-        editor.HandleError("User canceled the operation.");
+        editor.ConsoleText("User canceled the operation.");
     }
     else // If there was an error
     {
         iss << "Error: " << NFD_GetError();
-        editor.HandleError(iss.str());
+        editor.ConsoleText(iss.str());
         iss.str("");
     }
     // Free the memory allocated by nfd

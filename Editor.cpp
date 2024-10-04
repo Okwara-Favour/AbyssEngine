@@ -83,6 +83,8 @@ Editor::Editor()
 	engineTabs["Display"] = std::make_unique<Display>();
 	engineTabs["RenderModifier"] = std::make_unique<RenderModifier>();
 
+	scriptManager.lua.set_function("ConsoleText", &Editor::ConsoleText, this);
+	scriptManager.lua["entityManager"] = &entityManager;
 	Vec2::Lua(scriptManager.lua);
 	CTransform::Lua(scriptManager.lua);
 	CName::Lua(scriptManager.lua);
@@ -135,7 +137,7 @@ void Editor::Update()
 		}
 	}
 	catch (const std::exception& e) {
-		HandleError(e.what());
+		ConsoleText(e.what());
 	}
 }
 
@@ -204,9 +206,9 @@ bool Editor::isMouseInTab()
 		mousePos.y >= windowContentMin.y && mousePos.y <= windowContentMax.y);
 }
 
-void Editor::HandleError(const std::string& error)
+void Editor::ConsoleText(const std::string& error)
 {
-	engineTabs["Console"]->HandleError(error);
+	engineTabs["Console"]->ConsoleText(error);
 }
 
 void Editor::addAnimation(const Animation& anim)
@@ -279,6 +281,17 @@ void Editor::AddChildEntitiesToSceneFile(nlohmann::json& dict, const std::shared
 		else {
 			entityField["RENDER"] = "None";
 		}
+		if (e->hasAnyScriptable())
+		{
+			nlohmann::json scriptablesArray = nlohmann::json::array();
+
+			for (auto& s : e->getScriptables())
+			{
+				scriptablesArray.push_back(s.first);
+			}
+
+			entityField["SCRIPTABLES"] = scriptablesArray;
+		}
 		if (e->hasComponent<CChildren>())
 		{
 			entityField["HASCHILDREN"] = true;
@@ -308,7 +321,14 @@ void Editor::LoadChildEntitiesFromSceneFile(const nlohmann::json& dict, const st
 		if (renderName == "Rectangle") entity->addComponent<CRectangleShape>();
 		if (renderName == "Circle") entity->addComponent<CCircleShape>();
 		if (renderName != "Circle" && renderName != "Rectangle") entity->addComponent<CAnimation>(animationMap[renderName]);
-
+		if (entityField.contains("SCRIPTABLES"))
+		{
+			for (const auto& scriptName : entityField["SCRIPTABLES"])
+			{
+				std::string script = scriptName.get<std::string>();
+				entity->addScriptable(script);
+			}
+		}
 		if (entityField["HASCHILDREN"].get<bool>())
 		{
 			LoadChildEntitiesFromSceneFile(entityField["ENTITY"], entity);
@@ -326,6 +346,7 @@ void Editor::SaveScene()
 	std::vector<nlohmann::json> entityRecord;
 	std::vector<nlohmann::json> textureRecord;
 	std::vector<nlohmann::json> animationRecord;
+	std::vector<nlohmann::json> scriptRecord;
 	std::vector<nlohmann::json> globalRecord;
 
 	nlohmann::json globalField;
@@ -395,6 +416,18 @@ void Editor::SaveScene()
 		else {
 			entityField["RENDER"] = "None";
 		}
+		if (e->hasAnyScriptable())
+		{
+			nlohmann::json scriptablesArray = nlohmann::json::array();
+
+			for (auto& s : e->getScriptables())
+			{
+				scriptablesArray.push_back(s.first);
+			}
+
+			entityField["SCRIPTABLES"] = scriptablesArray;
+		}
+
 		if (e->hasComponent<CChildren>())
 		{
 			entityField["HASCHILDREN"] = true;
@@ -407,6 +440,20 @@ void Editor::SaveScene()
 		entityRecord.push_back(entityField);
 	}
 	SceneCollection["ENTITY"] += entityRecord;
+
+	for (auto& s : scriptManager.scriptsDirectoryMap)
+	{
+		if (scriptManager.hasEnvironment(s.first))
+		{
+			nlohmann::json scriptField;
+			scriptField["NAME"] = s.first + ".lua";
+			scriptField["DIRECTORY"] = s.second.string();
+			scriptRecord.push_back(scriptField);
+		}
+	}
+
+	SceneCollection["SCRIPT"] += scriptRecord;
+
 	std::cout << SceneCollection.dump(4) << std::endl;
 
 	std::ofstream outFile("Scene.json");
@@ -417,7 +464,7 @@ void Editor::SaveScene()
 	}
 	else
 	{
-		HandleError("Failed to open file for writing");
+		ConsoleText("Failed to open file for writing");
 	}
 }
 
@@ -436,7 +483,7 @@ void Editor::LoadScene()
 	}
 	else
 	{
-		HandleError("Failed to open file for reading");
+		ConsoleText("Failed to open file for reading");
 		return;
 	}
 
@@ -495,7 +542,20 @@ void Editor::LoadScene()
 			}
 		}
 	}
-	
+
+	scriptManager.Close();
+
+	if (SceneCollection.contains("SCRIPT"))
+	{
+		for (const auto& scriptField : SceneCollection["SCRIPT"][0])
+		{
+			std::string filename = scriptField["NAME"].get<std::string>();
+			std::string directoryName = scriptField["DIRECTORY"].get<std::string>();
+			fs::path directory(directoryName);
+			scriptManager.LoadScript(*this, filename, directory);
+		}
+	}
+
 	entityManager = EntityManager();
 	if (SceneCollection.contains("ENTITY"))
 	{
@@ -513,7 +573,14 @@ void Editor::LoadScene()
 			if (renderName == "Rectangle") entity->addComponent<CRectangleShape>();
 			if (renderName == "Circle") entity->addComponent<CCircleShape>();
 			if (renderName != "Circle" && renderName != "Rectangle") entity->addComponent<CAnimation>(animationMap[renderName]);
-
+			if (entityField.contains("SCRIPTABLES"))
+			{
+				for (const auto& scriptName : entityField["SCRIPTABLES"])
+				{
+					std::string script = scriptName.get<std::string>();
+					entity->addScriptable(script);
+				}
+			}
 			if (entityField["HASCHILDREN"].get<bool>())
 			{
 				entity->addComponent<CChildren>();

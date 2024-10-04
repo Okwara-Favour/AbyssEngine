@@ -37,7 +37,7 @@ bool ScriptManager::addScript(const std::string& name, const std::string& filena
 	if (fs::is_regular_file(path) && path.extension().string() == ".lua")
 	{
 		scriptsMap[name] = readFile(path.string());
-		scriptsPathMap[name] = path;
+		scriptsDirectoryMap[name] = currentDirectory;
 		return true;
 	}
 	return false;
@@ -71,33 +71,37 @@ void ScriptManager::ProcessScript(const std::string& name, const std::string& fi
 	}
 }
 
-void ScriptManager::LoadScript(const std::string& filename, const fs::path& directory)
+void ScriptManager::LoadScript(Editor& editor, const std::string& filename, const fs::path& directory)
 {
 	currentDirectory = directory;
-	currentDirectory /= DIR;
-	if (!fs::exists(currentDirectory) || !fs::is_directory(currentDirectory)) {
-		throw std::runtime_error("SEVERE WARNING: 'Scripts' directory not found!");
-	}
-	
+
 	std::string name = removeLuaExt(filename);
 
 	ProcessScript(name, filename);
 
 	if (hasScript(name))
 	{
+		if (std::find(environmentNames.begin(), environmentNames.end(), name) == environmentNames.end())
+		{
+			environmentNames.push_back(name);
+		}
 		sol::environment tempEnv(lua, sol::create, lua.globals());
 		allEnvironment[name] = std::make_shared<sol::environment>(tempEnv);
 		auto result = lua.safe_script(scriptsMap[name], *allEnvironment[name]);
 		if (!result.valid()) {
 			sol::error err = result; // Capture the error
-			std::cout << "Error during script processing" << std::endl;
+			editor.ConsoleText("Script: " + name + " environment construction failed");
+		}
+		else
+		{
+			editor.ConsoleText("Script: " + name + " environment construction succeeded");
 		}
 	}
 }
 
 bool ScriptManager::hasScript(const std::string& name)
 {
-	return scriptsPathMap.find(name) != scriptsPathMap.end();
+	return scriptsDirectoryMap.find(name) != scriptsDirectoryMap.end();
 }
 
 bool ScriptManager::hasEnvironment(const std::string& name)
@@ -127,16 +131,24 @@ void ScriptManager::ExecuteScript(const std::string& name)
 	if (!result.valid()) {
 		// An error occurred; handle it
 		sol::error err = result; // Capture the error
-		std::cout << err.what() << std::endl; // Pass the error message to the editor's HandleError
+		std::cout << err.what() << std::endl; // Pass the error message to the editor's ConsoleText
 	}
 }
 
-void ScriptManager::ResetScript(const std::string& filename, const fs::path& directory)
+void ScriptManager::ResetScript(Editor& editor, const std::string& filename, const fs::path& directory)
 {
 	std::string name = removeLuaExt(filename);
 
-	if (!hasScript(name)) return;
-
+	if (!hasScript(name)) 
+	{
+		editor.ConsoleText("Script: " + name + " not found");
+		return;
+	}
+	else if (!hasEnvironment(name))
+	{
+		editor.ConsoleText("Environment: " + name + " not found, Script is a sub script");
+		return;
+	}
 	auto envIter = allEnvironment.find(name);
 	if (envIter != allEnvironment.end()) {
 		for (auto& s : allSOL)
@@ -144,16 +156,17 @@ void ScriptManager::ResetScript(const std::string& filename, const fs::path& dir
 			if (s.name == name)
 			{
 				s.instantiated = std::make_shared<bool>(false);
-				s.scriptClass.reset();
-				s.instance.reset();
+				(*s.scriptClass).reset();
+				(*s.instance).reset();
 			}
 		}
-		auto& env = *envIter->second;
-		env.reset();
-
+		(*envIter->second).reset();
+		allEnvironment.erase(name);
 		lua.collect_garbage();
 	}
-	LoadScript(filename, directory);
+
+
+	LoadScript(editor, filename, directory);
 }
 
 void ScriptManager::ExecuteEntityScripts(Editor& editor, std::shared_ptr<Entity>& entity)
@@ -164,7 +177,7 @@ void ScriptManager::ExecuteEntityScripts(Editor& editor, std::shared_ptr<Entity>
 			!(*s.second.scriptClass)
 			)
 		{
-			editor.HandleError(entity->getComponent<CName>().name + " " + s.second.name + " " + std::to_string((*s.second.destroy)));
+			editor.ConsoleText(entity->getComponent<CName>().name + " " + s.second.name + " " + std::to_string((*s.second.destroy)));
 			auto envIter = allEnvironment.find(s.second.name);
 			if (envIter == allEnvironment.end()) {
 				std::cout << "Warning: script environment not available for " << s.second.name << std::endl;
@@ -175,7 +188,7 @@ void ScriptManager::ExecuteEntityScripts(Editor& editor, std::shared_ptr<Entity>
 			auto& env = *envIter->second;
 			sol::table tempScriptClass = env[s.second.name];
 			if (!tempScriptClass.valid()) {
-				editor.HandleError("Error: script class not found for " + s.second.name);
+				editor.ConsoleText("Error: script class not found for " + s.second.name);
 				continue;
 			}
 			s.second.scriptClass = std::make_shared<sol::table>(tempScriptClass);
@@ -188,7 +201,7 @@ void ScriptManager::ExecuteEntityScripts(Editor& editor, std::shared_ptr<Entity>
 				sol::table Start = startFunc(*s.second.scriptClass, entity);
 				s.second.instance = std::make_shared<sol::table>(Start);
 				s.second.instantiated = std::make_shared<bool>(true);
-				mapLuaToAny(s.second);
+				mapLuaToAny(Start, s.second);
 				Scriptable sc;
 				sc.name = s.second.name;
 				sc.instantiated = s.second.instantiated;
@@ -198,21 +211,23 @@ void ScriptManager::ExecuteEntityScripts(Editor& editor, std::shared_ptr<Entity>
 				allSOL.push_back(sc);
 			}
 			catch (const sol::error& e) {
-				editor.HandleError(std::string(e.what()));
+				editor.ConsoleText(std::string(e.what()));
 				continue;
 			}
 		}
 
 		if (!editor.gameMode) continue;
 
-		mapAnyToLua(s.second);
+		mapAnyToLua(editor, s.second);
 		sol::function updateFunc = (*s.second.scriptClass)["Update"];
 		if (updateFunc.valid()) {
 			try {
-				sol::protected_function Update = updateFunc(*s.second.instance, entity);
+				sol::table Update = updateFunc(*s.second.instance, entity);
+				mapLuaToAny(Update, s.second);
+				(*s.second.instance) = Update;
 			}
 			catch (const sol::error& e) {
-				editor.HandleError("Lua error in Update: " + std::string(e.what()));
+				editor.ConsoleText("Lua error in Update: " + std::string(e.what()));
 			}
 		}
 	}
@@ -253,20 +268,28 @@ void ScriptManager::Close()
 	allSOL.clear();
 	allEnvironment.clear();
 	lua.collect_garbage();
+
+	scriptsMap.clear();
+	scriptsDirectoryMap.clear();
+	environmentNames.clear();
+	currentDirectory.clear();
 }
 
-void ScriptManager::mapLuaToAny(Scriptable& script)
+void ScriptManager::mapLuaToAny(const sol::table& tab, Scriptable& script)
 {
-	for (const auto& pair : (*script.instance))
+	for (const auto& pair : tab)
 	{
 		std::string varName = pair.first.as<std::string>();
 		auto& varValue = pair.second;
 
-		std::cout << varName << std::endl;
+		//std::cout << varName << std::endl;
 		if (varValue.get_type() == sol::type::number)
 		{
 			if (varValue.is<int>()) {
 				script.variableMap[varName] = std::make_any<int>(varValue.as<int>());
+			}
+			else if (varValue.is<unsigned int>()) {
+				script.variableMap[varName] = std::make_any<unsigned int>(varValue.as<unsigned int>());
 			}
 			else if (varValue.is<float>()) {
 				script.variableMap[varName] = std::make_any<float>(varValue.as<float>());
@@ -274,15 +297,35 @@ void ScriptManager::mapLuaToAny(Scriptable& script)
 			else if (varValue.is<double>()) {
 				script.variableMap[varName] = std::make_any<double>(varValue.as<double>());
 			}
+			else if (varValue.is<long>()) {
+				script.variableMap[varName] = std::make_any<long>(varValue.as<long>());
+			}
+			else if (varValue.is<unsigned long>()) {
+				script.variableMap[varName] = std::make_any<unsigned long>(varValue.as<unsigned long>());
+			}
+			else if (varValue.is<long long>()) {
+				script.variableMap[varName] = std::make_any<long long>(varValue.as<long long>());
+			}
+			else if (varValue.is<unsigned long long>()) {
+				script.variableMap[varName] = std::make_any<unsigned long long>(varValue.as<unsigned long long>());
+			}
 		}
 		else if (varValue.get_type() == sol::type::string) {
 			script.variableMap[varName] = std::make_any<std::string>(varValue.as<std::string>());
+		}
+		else if (varValue.is<std::shared_ptr<Entity>>())
+		{
+			script.variableMap[varName] = std::make_any<std::shared_ptr<Entity>>(varValue.as<std::shared_ptr<Entity>>());
+		}
+		else if (varValue.is<Vec2>())
+		{
+			script.variableMap[varName] = std::make_any<Vec2>(varValue.as<Vec2>());
 		}
 	}
 }
 
 
-void ScriptManager::mapAnyToLua(Scriptable& script)
+void ScriptManager::mapAnyToLua(Editor& editor, Scriptable& script)
 {
 	for (const auto& pair : script.variableMap)
 	{
@@ -292,6 +335,10 @@ void ScriptManager::mapAnyToLua(Scriptable& script)
 		{
 			(*script.instance)[varName] = std::any_cast<int>(varValue);
 		}
+		else if (varValue.type() == typeid(unsigned int))
+		{
+			(*script.instance)[varName] = std::any_cast<unsigned int>(varValue);
+		}
 		else if (varValue.type() == typeid(float))
 		{
 			(*script.instance)[varName] = std::any_cast<float>(varValue);
@@ -300,9 +347,36 @@ void ScriptManager::mapAnyToLua(Scriptable& script)
 		{
 			(*script.instance)[varName] = std::any_cast<double>(varValue);
 		}
+		else if (varValue.type() == typeid(long))
+		{
+			(*script.instance)[varName] = std::any_cast<long>(varValue);
+		}
+		else if (varValue.type() == typeid(unsigned long))
+		{
+			(*script.instance)[varName] = std::any_cast<unsigned long>(varValue);
+		}
+		else if (varValue.type() == typeid(long long))
+		{
+			(*script.instance)[varName] = std::any_cast<long long>(varValue);
+		}
+		else if (varValue.type() == typeid(unsigned long long))
+		{
+			(*script.instance)[varName] = std::any_cast<unsigned long long>(varValue);
+		}
 		else if (varValue.type() == typeid(std::string))
 		{
 			(*script.instance)[varName] = std::any_cast<std::string>(varValue);
+		}
+		else if (varValue.type() == typeid(std::shared_ptr<Entity>))
+		{
+			auto entityPtr = std::any_cast<std::shared_ptr<Entity>>(varValue);
+			if (entityPtr) {
+				(*script.instance)[varName] = editor.entityManager.getEntity(entityPtr->id());
+			}
+		}
+		else if (varValue.type() == typeid(Vec2))
+		{
+			(*script.instance)[varName] = std::any_cast<Vec2>(varValue);
 		}
 	}
 }

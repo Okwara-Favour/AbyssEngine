@@ -27,7 +27,7 @@ void RenderModifier::Update(Editor& editor)
 			if (editor.selectedEntity->hasComponent<CChildren>()) {
 				for (auto& c : editor.selectedEntity->getComponent<CChildren>().children)
 				{
-					editor.HandleError(std::to_string(c.first) + c.second);
+					editor.ConsoleText(std::to_string(c.first) + c.second);
 				}
 			}
 		}
@@ -96,7 +96,7 @@ void RenderModifier::ParentChild(Editor& editor, std::shared_ptr<Entity>& entity
 				auto& cTrans = child->getComponent<CTransform>();
 				if (ImGui::IsKeyPressed(ImGuiKey_N))
 				{
-					editor.HandleError(eTrans.pos.toString() + " " + cTrans.pos.toString() + " " + std::to_string(child->id()));
+					editor.ConsoleText(eTrans.pos.toString() + " " + cTrans.pos.toString() + " " + std::to_string(child->id()));
 				}
 				Vec2 scale = eTrans.scale / cParent.initialScale;
 				cTrans.scale = cTrans.scale.multiply(scale);

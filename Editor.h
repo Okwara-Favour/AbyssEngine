@@ -96,7 +96,7 @@ public:
 	void Undo();
 	void Redo();
 	void Run();
-	void HandleError(const std::string& error);
+	void ConsoleText(const std::string& error);
 	void AddChildEntitiesToSceneFile(nlohmann::json& dict, const std::shared_ptr<Entity> parent);
 	void LoadChildEntitiesFromSceneFile(const nlohmann::json& dict, const std::shared_ptr<Entity> parent);
 	void SaveScene();

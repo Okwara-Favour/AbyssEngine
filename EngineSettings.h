@@ -10,6 +10,7 @@ class EngineSettings : public AbstractEngineTab
 	std::vector<std::string> editList = { "Undo", "Redo" };
 	std::vector<std::string> gameObjectList = { "Make Child", "Make Parent", "Make Independent", "Add", "Remove" };
 	std::vector<std::string> addList = { "Rectangle", "Circle"};
+	std::vector<std::string> scriptList = { "Rebuild" };
 	std::vector<std::string> winList = { "Close", "FullScreen"};
 	void ChangeParent(Editor& editor, std::shared_ptr<Entity>& entity, const std::shared_ptr<Entity>& parent);
 	void MakeIndependent(Editor& editor, const std::shared_ptr<Entity>& entity);

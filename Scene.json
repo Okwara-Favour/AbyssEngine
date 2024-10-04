@@ -45,6 +45,9 @@
                             "PY": 542.0,
                             "R": 0.0,
                             "RENDER": "Rectangle",
+                            "SCRIPTABLES": [
+                                "Example"
+                            ],
                             "SX": 1.0,
                             "SY": 1.0,
                             "TAG": "Default"
@@ -68,6 +71,9 @@
                 "PY": 377.0,
                 "R": 0.0,
                 "RENDER": "PleaIdle2",
+                "SCRIPTABLES": [
+                    "Example"
+                ],
                 "SX": 1.0,
                 "SY": 1.0,
                 "TAG": "Default"
@@ -103,6 +109,14 @@
                 "ROTATE_FACTOR": 0.5,
                 "SCALE_FACTOR": 0.5,
                 "TRANSLATE_FACTOR": 1.0
+            }
+        ]
+    ],
+    "SCRIPT": [
+        [
+            {
+                "DIRECTORY": "C:\\Users\\Emmanuel-Okwara\\Documents\\Acoding\\Cplus\\Engine\\AbyssEngine\\Assets\\Scripts",
+                "NAME": "Example.lua"
             }
         ]
     ],

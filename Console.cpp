@@ -26,7 +26,7 @@ void Console::Update(Editor& editor)
 	ImGui::End();
 }
 
-void Console::HandleError(const std::string& errorString)
+void Console::ConsoleText(const std::string& errorString)
 {
 	errorStack.push_back(errorString);
 }
