@@ -170,7 +170,7 @@ void Display::HandleKeyActions(Editor& editor)
 		sf::Vector2f viewVel;
 		for (auto& key : keyAction)
 		{
-			if (ImGui::IsKeyPressed(key.first))
+			if (!editor.gameMode && ImGui::IsKeyPressed(key.first))
 			{
 				if (key.second == "ZOOMIN")		view.zoom(1.1);
 				if (key.second == "ZOOMOUT")	view.zoom(0.9);

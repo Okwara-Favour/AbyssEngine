@@ -177,7 +177,7 @@ void ScriptManager::ExecuteEntityScripts(Editor& editor, std::shared_ptr<Entity>
 			!(*s.second.scriptClass)
 			)
 		{
-			editor.ConsoleText(entity->getComponent<CName>().name + " " + s.second.name + " " + std::to_string((*s.second.destroy)));
+			//editor.ConsoleText(entity->getComponent<CName>().name + " " + s.second.name + " " + std::to_string((*s.second.destroy)));
 			auto envIter = allEnvironment.find(s.second.name);
 			if (envIter == allEnvironment.end()) {
 				std::cout << "Warning: script environment not available for " << s.second.name << std::endl;

@@ -21,7 +21,12 @@ function Example:Update(entity)
     self.count = self.count + 1
     --editor:HandleError((self.count + ""))
     --entity:getTransform().pos = entity:getTransform().pos + self.vec
-    entity:getTransform().scale = entity:getTransform().scale + Vec2:new(0.1, 0.1)
+    if Listener:IsKeyPressed("Left") then
+        entity:getTransform().pos.x = entity:getTransform().pos.x - self.vec.x
+    end
+    if Listener:IsKeyPressed("Right") then
+        entity:getTransform().pos.x = entity:getTransform().pos.x + self.vec.x
+    end
     --self.ent:getTransform().pos = self.ent:getTransform().pos + self.vec
     --print("Updated Position:", entity:getTransform().pos:toString())
     return self

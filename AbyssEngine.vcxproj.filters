@@ -212,5 +212,8 @@
     <ClInclude Include="ScriptManager.h">
       <Filter>Header Files\script</Filter>
     </ClInclude>
+    <ClInclude Include="EventListener.hpp">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

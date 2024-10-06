@@ -209,6 +209,7 @@
     <ClInclude Include="Display.h" />
     <ClInclude Include="Editor.h" />
     <ClInclude Include="EngineSettings.h" />
+    <ClInclude Include="EventListener.hpp" />
     <ClInclude Include="Files.h" />
     <ClInclude Include="Hierarchy.h" />
     <ClInclude Include="IMGUI\imconfig-SFML.h" />

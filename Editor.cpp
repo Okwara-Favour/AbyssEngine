@@ -84,7 +84,8 @@ Editor::Editor()
 	engineTabs["RenderModifier"] = std::make_unique<RenderModifier>();
 
 	scriptManager.lua.set_function("ConsoleText", &Editor::ConsoleText, this);
-	scriptManager.lua["entityManager"] = &entityManager;
+	scriptManager.lua["EManager"] = &entityManager;
+	scriptManager.lua["Listener"] = &eventListener;
 	Vec2::Lua(scriptManager.lua);
 	CTransform::Lua(scriptManager.lua);
 	CName::Lua(scriptManager.lua);
@@ -93,6 +94,7 @@ Editor::Editor()
 	CCircleShape::Lua(scriptManager.lua);
 	Entity::Lua(scriptManager.lua);
 	EntityManager::Lua(scriptManager.lua);
+	EventListener::Lua(scriptManager.lua);
 	Init();
 	command.Save(entityManager, selectedEntity);
 }

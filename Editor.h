@@ -30,6 +30,7 @@ extern "C"
 #include "RenderModifier.h"
 #include "Assets/Game/MainScripts/EntityManager.h"
 #include "ScriptManager.h"
+#include "EventListener.hpp"
 
 class Command
 {
@@ -84,6 +85,7 @@ public:
 	ImVec2					startPosition;
 	std::shared_ptr<Entity> selectedEntity = nullptr;
 	EntityManager			entityManager;
+	EventListener			eventListener;
 	Editor();
 	const sf::Vector2u WinSize() { return window.getSize(); }
 	void Init();
@@ -109,4 +111,3 @@ public:
 	const bool FullScreen() const;
 	bool isMouseInTab();
 };
-
