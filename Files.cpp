@@ -14,21 +14,12 @@ void Files::Init(Editor& editor)
 
 	//LoadScripts(editor);
 
-	auto entity = editor.entityManager.addEntity("STest");
-	entity->addComponent<CName>("TestSc1");
-	entity->addComponent<CTransform>();
+	auto entity = editor.entityManager.addEntity("MainCamera");
+	entity->addComponent<CName>("Camera");
+	Vec2 CamScale(editor.WinSize().x / 1280.0f, editor.WinSize().y / 720.0f);
+	entity->addComponent<CTransform>(Vec2(editor.WinSize().x/2, editor.WinSize().y/2), CamScale);
 	entity->addComponent<CSize>();
-	entity->addComponent<CRectangleShape>();
-	//entity->addScriptable(Scriptable("Example"));
-	//editor.scriptManager.ExecuteEntityScripts(editor, entity);
-
-	auto entity2 = editor.entityManager.addEntity("STest");
-	entity2->addComponent<CName>("TestSc2");
-	entity2->addComponent<CTransform>();
-	entity2->addComponent<CSize>();
-	entity2->addComponent<CRectangleShape>();
-	//entity2->addScriptable(Scriptable("Example"));
-	//editor.scriptManager.ExecuteEntityScripts(editor, entity2);
+	entity->addComponent<CCamera>();
 }
 void Files::Update(Editor& editor)
 {

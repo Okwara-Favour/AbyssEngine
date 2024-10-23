@@ -3,12 +3,12 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <filesystem>
+#include "Scriptable.hpp"
 
 namespace fs = std::filesystem;
 
 class Editor;
 class Entity;
-class Scriptable;
 
 class ScriptManager
 {
@@ -17,10 +17,11 @@ class ScriptManager
 	fs::path currentDirectory;
 	std::string readFile(const std::string& path);
 	bool addScript(const std::string& name, const std::string& filename);
-	std::vector<Scriptable> allSOL;
-	std::unordered_map<std::string, std::shared_ptr<sol::environment>> allEnvironment;
-	void mapLuaToAny(const sol::table& tab, Scriptable& script);
-	void mapAnyToLua(Editor& editor, Scriptable& script);
+	std::map<size_t, std::vector<Scriptable>> allSOL;
+	std::unordered_map<std::string, sol::environment> allEnvironment;
+	void mapEnvironmentVariables(std::unordered_map<std::string, std::any>& toPush, sol::environment& env);
+	void pushEnvironmentVariables(std::unordered_map<std::string, std::any>& toPush, std::unordered_map<std::string, std::any>& toRestore, sol::environment& env);
+	void popEnvironmentVariables(std::unordered_map<std::string, std::any>& toRestore, sol::environment& env);
 public:
 	sol::state lua;
 	std::vector<std::string> environmentNames;
@@ -34,8 +35,10 @@ public:
 	bool hasEnvironment(const std::string& name);
 	void ExecuteScript(const std::string& name);
 	void ResetScript(Editor& editor, const std::string& filename, const fs::path& directory);
+	void CompileEntityEnvironment(Editor& editor, std::shared_ptr<Entity>& entity);
 	void ExecuteEntityScripts(Editor& editor, std::shared_ptr<Entity>& entity);
 	void UpdateSOL();
+	void ResolveMissingSharedSOL(Editor& editor);
 	void Close();
 };
 

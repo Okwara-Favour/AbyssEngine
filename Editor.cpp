@@ -80,21 +80,26 @@ Editor::Editor()
 	engineTabs["Files"] = std::make_unique<Files>();
 	engineTabs["Console"] = std::make_unique<Console>();
 	engineTabs["Hierarchy"] = std::make_unique<Hierarchy>();
-	engineTabs["Display"] = std::make_unique<Display>();
 	engineTabs["RenderModifier"] = std::make_unique<RenderModifier>();
+	engineTabs["Display"] = std::make_unique<Display>();
 
 	scriptManager.lua.set_function("ConsoleText", &Editor::ConsoleText, this);
 	scriptManager.lua["EManager"] = &entityManager;
 	scriptManager.lua["Listener"] = &eventListener;
+
 	Vec2::Lua(scriptManager.lua);
 	CTransform::Lua(scriptManager.lua);
 	CName::Lua(scriptManager.lua);
 	CSize::Lua(scriptManager.lua);
-	CRectangleShape::Lua(scriptManager.lua);
-	CCircleShape::Lua(scriptManager.lua);
+	CBoxRender::Lua(scriptManager.lua);
+	CCircleRender::Lua(scriptManager.lua);
 	Entity::Lua(scriptManager.lua);
 	EntityManager::Lua(scriptManager.lua);
 	EventListener::Lua(scriptManager.lua);
+	Camera::Lua(scriptManager.lua);
+	CCircleCollider::Lua(scriptManager.lua);
+	CBoxCollider::Lua(scriptManager.lua);
+	LuaBindSFML(scriptManager.lua);
 	Init();
 	command.Save(entityManager, selectedEntity);
 }
@@ -135,8 +140,9 @@ void Editor::Update()
 	{
 		for (auto& tab : engineTabs)
 		{
-			tab.second->Update(*this);
+			if(tab.first != "Display") tab.second->Update(*this);
 		}
+		engineTabs["Display"]->Update(*this);
 	}
 	catch (const std::exception& e) {
 		ConsoleText(e.what());
@@ -147,7 +153,7 @@ void Editor::Update()
 void Editor::Save()
 {
 	command.Save(entityManager, selectedEntity);
-	std::cout << "Save occured" << std::endl;
+	//std::cout << "Save occured" << std::endl;
 }
 
 void Editor::Undo()
@@ -184,8 +190,8 @@ void Editor::Run()
 		}
 		// Render
 		LoadScene();
+		//window.clear();
 		Update();
-		window.clear();
 		Render();
 		window.display();
 	}
@@ -268,20 +274,47 @@ void Editor::AddChildEntitiesToSceneFile(nlohmann::json& dict, const std::shared
 		else {
 			entityField["NAME"] = "Unnamed";
 		}
-		if (e->hasComponent<CRectangleShape>())
+		if (e->hasComponent<CBoxRender>())
 		{
+			auto& boxRender = e->getComponent<CBoxRender>();
 			entityField["RENDER"] = "Rectangle";
+			entityField["FILLCOLOR"] = { boxRender.fillColor.r, boxRender.fillColor.g, boxRender.fillColor.b, boxRender.fillColor.a };
+			entityField["OUTLINECOLOR"] = { boxRender.outlineColor.r, boxRender.outlineColor.g, boxRender.outlineColor.b, boxRender.outlineColor.a };
+			entityField["THICKNESS"] = boxRender.outlineThickness;
 		}
-		else if (e->hasComponent<CCircleShape>())
+		else if (e->hasComponent<CCircleRender>())
 		{
+			auto& circleRender = e->getComponent<CCircleRender>();
 			entityField["RENDER"] = "Circle";
+			entityField["POINTCOUNT"] = circleRender.pointCount;
+			entityField["FILLCOLOR"] = { circleRender.fillColor.r, circleRender.fillColor.g, circleRender.fillColor.b, circleRender.fillColor.a };
+			entityField["OUTLINECOLOR"] = { circleRender.outlineColor.r, circleRender.outlineColor.g, circleRender.outlineColor.b, circleRender.outlineColor.a };
+			entityField["THICKNESS"] = circleRender.outlineThickness;
 		}
 		else if (e->hasComponent<CAnimation>())
 		{
-			entityField["RENDER"] = e->getComponent<CAnimation>().animation.getName();
+			auto& animComponent = e->getComponent<CAnimation>();
+			entityField["RENDER"] = animComponent.animation.getName();
+			entityField["REPEAT"] = animComponent.repeat;
+			entityField["FILLCOLOR"] = { animComponent.fillColor.r, animComponent.fillColor.g, animComponent.fillColor.b, animComponent.fillColor.a };
 		}
 		else {
 			entityField["RENDER"] = "None";
+		}
+		if (e->hasComponent<CCamera>())
+		{
+			auto& cam = e->getComponent<CCamera>().camera;
+			entityField["CAMERACOLOR"] = { cam.getColor().r, cam.getColor().g, cam.getColor().b, cam.getColor().a };
+		}
+		if (e->hasComponent<CBoxCollider>())
+		{
+			auto& boxOff = e->getComponent<CBoxCollider>().offset;
+			entityField["BOXCOLLIDER"] = { boxOff.x, boxOff.y };
+		}
+		if (e->hasComponent<CCircleCollider>())
+		{
+			auto& circleOff = e->getComponent<CCircleCollider>().offset;
+			entityField["CIRCLECOLLIDER"] = circleOff;
 		}
 		if (e->hasAnyScriptable())
 		{
@@ -320,9 +353,83 @@ void Editor::LoadChildEntitiesFromSceneFile(const nlohmann::json& dict, const st
 		entity->addComponent<CTransform>(pos, scale, angle);
 		entity->addComponent<CSize>();
 		std::string renderName = entityField["RENDER"].get<std::string>();
-		if (renderName == "Rectangle") entity->addComponent<CRectangleShape>();
-		if (renderName == "Circle") entity->addComponent<CCircleShape>();
-		if (renderName != "Circle" && renderName != "Rectangle") entity->addComponent<CAnimation>(animationMap[renderName]);
+		if (renderName == "Rectangle")
+		{
+			auto& BoxRender = entity->addComponent<CBoxRender>();
+			BoxRender.outlineThickness = entityField["THICKNESS"].get<float>();
+			auto fillColorArray = entityField["FILLCOLOR"];
+			BoxRender.fillColor = sf::Color(
+				fillColorArray[0].get<uint8_t>(),
+				fillColorArray[1].get<uint8_t>(),
+				fillColorArray[2].get<uint8_t>(),
+				fillColorArray[3].get<uint8_t>()
+			);
+
+			// Load outline color for Rectangle
+			auto outlineColorArray = entityField["OUTLINECOLOR"];
+			BoxRender.outlineColor = sf::Color(
+				outlineColorArray[0].get<uint8_t>(),
+				outlineColorArray[1].get<uint8_t>(),
+				outlineColorArray[2].get<uint8_t>(),
+				outlineColorArray[3].get<uint8_t>()
+			);
+		}
+		if (renderName == "Circle")
+		{
+			auto& CircleRender = entity->addComponent<CCircleRender>();
+			CircleRender.outlineThickness = entityField["THICKNESS"].get<float>();
+			CircleRender.pointCount = entityField["POINTCOUNT"].get<size_t>();
+			auto fillColorArray = entityField["FILLCOLOR"];
+			CircleRender.fillColor = sf::Color(
+				fillColorArray[0].get<uint8_t>(),
+				fillColorArray[1].get<uint8_t>(),
+				fillColorArray[2].get<uint8_t>(),
+				fillColorArray[3].get<uint8_t>()
+			);
+
+			// Load outline color for Circle
+			auto outlineColorArray = entityField["OUTLINECOLOR"];
+			CircleRender.outlineColor = sf::Color(
+				outlineColorArray[0].get<uint8_t>(),
+				outlineColorArray[1].get<uint8_t>(),
+				outlineColorArray[2].get<uint8_t>(),
+				outlineColorArray[3].get<uint8_t>()
+			);
+		}
+		if (renderName != "Circle" && renderName != "Rectangle")
+		{
+			auto& Anim = entity->addComponent<CAnimation>(animationMap[renderName]);
+			Anim.repeat = entityField["REPEAT"].get<bool>();
+			auto fillColorArray = entityField["FILLCOLOR"];
+			Anim.fillColor = sf::Color(
+				fillColorArray[0].get<uint8_t>(),
+				fillColorArray[1].get<uint8_t>(),
+				fillColorArray[2].get<uint8_t>(),
+				fillColorArray[3].get<uint8_t>()
+			);
+		}
+		if (entityField.contains("CAMERACOLOR"))
+		{
+			auto fillColorArray = entityField["CAMERACOLOR"];
+			entity->addComponent<CCamera>().camera.setColor(
+				fillColorArray[0].get<uint8_t>(),
+				fillColorArray[1].get<uint8_t>(),
+				fillColorArray[2].get<uint8_t>(),
+				fillColorArray[3].get<uint8_t>()
+			);
+		}
+		if (entityField.contains("BOXCOLLIDER"))
+		{
+			auto boxOff = entityField["BOXCOLLIDER"];
+			entity->addComponent<CBoxCollider>();
+			entity->getComponent<CBoxCollider>().offset = Vec2(boxOff[0].get<float>(), boxOff[1].get<float>());
+		}
+		if (entityField.contains("CIRCLECOLLIDER"))
+		{
+			auto circleOff = entityField["CIRCLECOLLIDER"];
+			entity->addComponent<CCircleCollider>();
+			entity->getComponent<CCircleCollider>().offset = circleOff.get<float>();
+		}
 		if (entityField.contains("SCRIPTABLES"))
 		{
 			for (const auto& scriptName : entityField["SCRIPTABLES"])
@@ -333,11 +440,13 @@ void Editor::LoadChildEntitiesFromSceneFile(const nlohmann::json& dict, const st
 		}
 		if (entityField["HASCHILDREN"].get<bool>())
 		{
+			entity->addComponent<CChildren>();
 			LoadChildEntitiesFromSceneFile(entityField["ENTITY"], entity);
 		}
 		auto& parentTrans = parent->getComponent<CTransform>();
 		entity->addComponent<CParent>(parent->id(), parent->tag(), parentTrans.pos, parentTrans.scale, parentTrans.angle);
 		parent->getComponent<CChildren>().children.push_back({ entity->id(), entity->tag() });
+		parent->getComponent<CChildren>().childEntities[entity->id()] = entityManager.MakeEntityCopy(entity);
 	}
 }
 
@@ -403,20 +512,47 @@ void Editor::SaveScene()
 		else {
 			entityField["NAME"] = "Unnamed";
 		}
-		if (e->hasComponent<CRectangleShape>())
+		if (e->hasComponent<CBoxRender>())
 		{
+			auto& boxRender = e->getComponent<CBoxRender>();
 			entityField["RENDER"] = "Rectangle";
+			entityField["FILLCOLOR"] = { boxRender.fillColor.r, boxRender.fillColor.g, boxRender.fillColor.b, boxRender.fillColor.a };
+			entityField["OUTLINECOLOR"] = { boxRender.outlineColor.r, boxRender.outlineColor.g, boxRender.outlineColor.b, boxRender.outlineColor.a };
+			entityField["THICKNESS"] = boxRender.outlineThickness;
 		}
-		else if (e->hasComponent<CCircleShape>())
+		else if (e->hasComponent<CCircleRender>())
 		{
+			auto& circleRender = e->getComponent<CCircleRender>();
 			entityField["RENDER"] = "Circle";
+			entityField["POINTCOUNT"] = circleRender.pointCount;
+			entityField["FILLCOLOR"] = { circleRender.fillColor.r, circleRender.fillColor.g, circleRender.fillColor.b, circleRender.fillColor.a };
+			entityField["OUTLINECOLOR"] = { circleRender.outlineColor.r, circleRender.outlineColor.g, circleRender.outlineColor.b, circleRender.outlineColor.a };
+			entityField["THICKNESS"] = circleRender.outlineThickness;
 		}
 		else if (e->hasComponent<CAnimation>())
 		{
-			entityField["RENDER"] = e->getComponent<CAnimation>().animation.getName();
+			auto& animComponent = e->getComponent<CAnimation>();
+			entityField["RENDER"] = animComponent.animation.getName();
+			entityField["REPEAT"] = animComponent.repeat;
+			entityField["FILLCOLOR"] = { animComponent.fillColor.r, animComponent.fillColor.g, animComponent.fillColor.b, animComponent.fillColor.a };
 		}
 		else {
 			entityField["RENDER"] = "None";
+		}
+		if (e->hasComponent<CCamera>())
+		{
+			auto& cam = e->getComponent<CCamera>().camera;
+			entityField["CAMERACOLOR"] = { cam.getColor().r, cam.getColor().g, cam.getColor().b, cam.getColor().a };
+		}
+		if (e->hasComponent<CBoxCollider>())
+		{
+			auto& boxOff = e->getComponent<CBoxCollider>().offset;
+			entityField["BOXCOLLIDER"] = { boxOff.x, boxOff.y };
+		}
+		if (e->hasComponent<CCircleCollider>())
+		{
+			auto& circleOff = e->getComponent<CCircleCollider>().offset;
+			entityField["CIRCLECOLLIDER"] = circleOff;
 		}
 		if (e->hasAnyScriptable())
 		{
@@ -456,7 +592,7 @@ void Editor::SaveScene()
 
 	SceneCollection["SCRIPT"] += scriptRecord;
 
-	std::cout << SceneCollection.dump(4) << std::endl;
+	//std::cout << SceneCollection.dump(4) << std::endl;
 
 	std::ofstream outFile("Scene.json");
 	if (outFile.is_open())
@@ -572,9 +708,86 @@ void Editor::LoadScene()
 			entity->addComponent<CTransform>(pos, scale, angle);
 			entity->addComponent<CSize>();
 			std::string renderName = entityField["RENDER"].get<std::string>();
-			if (renderName == "Rectangle") entity->addComponent<CRectangleShape>();
-			if (renderName == "Circle") entity->addComponent<CCircleShape>();
-			if (renderName != "Circle" && renderName != "Rectangle") entity->addComponent<CAnimation>(animationMap[renderName]);
+			if (renderName == "Rectangle") 
+			{
+				auto& BoxRender = entity->addComponent<CBoxRender>();
+				BoxRender.outlineThickness = entityField["THICKNESS"].get<float>();
+				auto fillColorArray = entityField["FILLCOLOR"];
+				BoxRender.fillColor = sf::Color(
+					fillColorArray[0].get<uint8_t>(),
+					fillColorArray[1].get<uint8_t>(),
+					fillColorArray[2].get<uint8_t>(),
+					fillColorArray[3].get<uint8_t>()
+				);
+
+				// Load outline color for Rectangle
+				auto outlineColorArray = entityField["OUTLINECOLOR"];
+				BoxRender.outlineColor = sf::Color(
+					outlineColorArray[0].get<uint8_t>(),
+					outlineColorArray[1].get<uint8_t>(),
+					outlineColorArray[2].get<uint8_t>(),
+					outlineColorArray[3].get<uint8_t>()
+				);
+			}
+			if (renderName == "Circle")
+			{
+				auto& CircleRender = entity->addComponent<CCircleRender>();
+				CircleRender.outlineThickness = entityField["THICKNESS"].get<float>();
+				CircleRender.pointCount = entityField["POINTCOUNT"].get<size_t>();
+				auto fillColorArray = entityField["FILLCOLOR"];
+				CircleRender.fillColor = sf::Color(
+					fillColorArray[0].get<uint8_t>(),
+					fillColorArray[1].get<uint8_t>(),
+					fillColorArray[2].get<uint8_t>(),
+					fillColorArray[3].get<uint8_t>()
+				);
+
+				// Load outline color for Circle
+				auto outlineColorArray = entityField["OUTLINECOLOR"];
+				CircleRender.outlineColor = sf::Color(
+					outlineColorArray[0].get<uint8_t>(),
+					outlineColorArray[1].get<uint8_t>(),
+					outlineColorArray[2].get<uint8_t>(),
+					outlineColorArray[3].get<uint8_t>()
+				);
+			}
+			if (renderName != "Circle" && renderName != "Rectangle") 
+			{
+				if (renderName != "None")
+				{
+					auto& Anim = entity->addComponent<CAnimation>(animationMap[renderName]);
+					Anim.repeat = entityField["REPEAT"].get<bool>();
+					auto fillColorArray = entityField["FILLCOLOR"];
+					Anim.fillColor = sf::Color(
+						fillColorArray[0].get<uint8_t>(),
+						fillColorArray[1].get<uint8_t>(),
+						fillColorArray[2].get<uint8_t>(),
+						fillColorArray[3].get<uint8_t>()
+					);
+				}
+			}
+			if (entityField.contains("CAMERACOLOR"))
+			{
+				auto fillColorArray = entityField["CAMERACOLOR"];
+				entity->addComponent<CCamera>().camera.setColor(
+					fillColorArray[0].get<uint8_t>(),
+					fillColorArray[1].get<uint8_t>(),
+					fillColorArray[2].get<uint8_t>(),
+					fillColorArray[3].get<uint8_t>()
+				);
+			}
+			if (entityField.contains("BOXCOLLIDER"))
+			{
+				auto boxOff = entityField["BOXCOLLIDER"];
+				entity->addComponent<CBoxCollider>();
+				entity->getComponent<CBoxCollider>().offset = Vec2(boxOff[0].get<float>(), boxOff[1].get<float>());
+			}
+			if (entityField.contains("CIRCLECOLLIDER"))
+			{
+				auto circleOff = entityField["CIRCLECOLLIDER"];
+				entity->addComponent<CCircleCollider>();
+				entity->getComponent<CCircleCollider>().offset = circleOff.get<float>();
+			}
 			if (entityField.contains("SCRIPTABLES"))
 			{
 				for (const auto& scriptName : entityField["SCRIPTABLES"])
@@ -600,6 +813,7 @@ void Editor::StartGame()
 	gameMode = true;
 	entityManager.copyTo(EMCOPY);
 	selectedEntity = nullptr;
+	//scriptManager.RecompileClasses(*this);
 }
 
 void Editor::QuitGame()
@@ -607,5 +821,38 @@ void Editor::QuitGame()
 	if (!gameMode) return;
 	gameMode = false;
 	EMCOPY.copyTo(entityManager);
+	scriptManager.ResolveMissingSharedSOL(*this);
 	selectedEntity = nullptr;
+}
+
+void Editor::LuaBindSFML(sol::state& lua)
+{
+	lua.new_usertype<sf::RectangleShape>("RectangleShape",
+		sol::constructors<sf::RectangleShape()>()
+		// No members or functions exposed
+	);
+
+	lua.new_usertype<sf::CircleShape>("CircleShape",
+		sol::constructors<sf::CircleShape()>()
+		// No members or functions exposed
+	);
+	lua.new_usertype<sf::Color>("Color",
+		sol::constructors<sf::Color(), sf::Color(sf::Uint8, sf::Uint8, sf::Uint8, sf::Uint8)>(),
+
+		"r", &sf::Color::r,
+		"g", &sf::Color::g,
+		"b", &sf::Color::b,
+		"a", &sf::Color::a,
+
+		// Static predefined colors
+		"Black", sol::var(sf::Color::Black),
+		"White", sol::var(sf::Color::White),
+		"Red", sol::var(sf::Color::Red),
+		"Green", sol::var(sf::Color::Green),
+		"Blue", sol::var(sf::Color::Blue),
+		"Yellow", sol::var(sf::Color::Yellow),
+		"Magenta", sol::var(sf::Color::Magenta),
+		"Cyan", sol::var(sf::Color::Cyan),
+		"Transparent", sol::var(sf::Color::Transparent)
+	);
 }

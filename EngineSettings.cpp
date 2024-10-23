@@ -160,13 +160,13 @@ void EngineSettings::createEntity(Editor& editor, const std::string& type)
     {
         std::string name = "Rectangle" + std::to_string(entity->id());
         entity->addComponent<CName>(name);
-        entity->addComponent<CRectangleShape>();
+        entity->addComponent<CBoxRender>();
     }
     if (type == "Circle")
     {
         std::string name = "Circle" + std::to_string(entity->id());
         entity->addComponent<CName>(name);
-        entity->addComponent<CCircleShape>();
+        entity->addComponent<CCircleRender>();
     }
 }
 
@@ -229,6 +229,7 @@ void EngineSettings::ChangeParent(Editor& editor, std::shared_ptr<Entity>& entit
     entity->addComponent<CParent>(parent->id(), parent->tag(), parentTrans.pos, parentTrans.scale, parentTrans.angle);
     if (!parent->hasComponent<CChildren>()) { parent->addComponent<CChildren>(); }
     parent->getComponent<CChildren>().children.push_back({ entity->id(), entity->tag() });
+    parent->getComponent<CChildren>().childEntities[entity->id()] = editor.entityManager.MakeEntityCopy(entity);
 }
 
 void EngineSettings::MakeIndependent(Editor& editor, const std::shared_ptr<Entity>& entity)
@@ -238,8 +239,11 @@ void EngineSettings::MakeIndependent(Editor& editor, const std::shared_ptr<Entit
         auto& eParent = entity->getComponent<CParent>();
         auto& eParentEntity = editor.entityManager.getEntity(eParent.id);
         auto& ePPChildren = eParentEntity->getComponent<CChildren>().children;
+        auto& ePPChildEntities = eParentEntity->getComponent<CChildren>().childEntities;
         auto it = std::find(ePPChildren.begin(), ePPChildren.end(), std::make_pair(entity->id(), entity->tag()));
         if (it != ePPChildren.end()) {
+            auto& value = it->first;
+            ePPChildEntities.erase(value);
             ePPChildren.erase(it);
         }
         if (ePPChildren.empty()) eParentEntity->removeComponent<CChildren>();

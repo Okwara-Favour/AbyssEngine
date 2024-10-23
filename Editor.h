@@ -28,8 +28,9 @@ extern "C"
 #include "Hierarchy.h"
 #include "Display.h"
 #include "RenderModifier.h"
-#include "Assets/Game/MainScripts/EntityManager.h"
-#include "ScriptManager.h"
+#include "Scripts/EntityManager.h"
+#include "Scripts/ScriptManager.h"
+#include "Scripts/PhysicsManager.h"
 #include "EventListener.hpp"
 
 class Command
@@ -50,7 +51,6 @@ namespace fs = std::filesystem;
 class Editor
 {
 	std::map<std::string, std::unique_ptr<AbstractEngineTab>> engineTabs;
-	sf::RenderWindow	window;
 	sf::Clock			deltaClock;
 	Command				command;
 	bool				close = false;
@@ -65,6 +65,7 @@ protected:
 	friend Display;
 	friend Hierarchy;
 	friend RenderModifier;
+	sf::RenderWindow	window;
 	float duration = 0.25;
 	float translateFactor = 1.0f;
 	float scaleFactor = 0.5f;
@@ -80,11 +81,13 @@ protected:
 	void addAnimation(const Animation& anim);
 	void removeAnimation(const Animation& anim);
 	void updateAnimation();
+	void LuaBindSFML(sol::state& Lua);
 public:
 	bool					gameMode = false;
 	ImVec2					startPosition;
 	std::shared_ptr<Entity> selectedEntity = nullptr;
 	EntityManager			entityManager;
+	PhysicsManager			physicsManager;
 	EventListener			eventListener;
 	Editor();
 	const sf::Vector2u WinSize() { return window.getSize(); }

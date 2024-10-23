@@ -161,18 +161,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Assets\Game\MainScripts\Animation.cpp" />
-    <ClCompile Include="Assets\Game\MainScripts\Components.cpp" />
-    <ClCompile Include="Assets\Game\MainScripts\Entity.cpp" />
-    <ClCompile Include="Assets\Game\MainScripts\EntityManager.cpp" />
-    <ClCompile Include="Assets\Game\MainScripts\Grid.cpp" />
-    <ClCompile Include="Assets\Game\MainScripts\LightSource.cpp" />
-    <ClCompile Include="Assets\Game\MainScripts\lineSegment.cpp" />
-    <ClCompile Include="Assets\Game\MainScripts\ParticleSystem.cpp" />
-    <ClCompile Include="Assets\Game\MainScripts\Physics.cpp" />
-    <ClCompile Include="Assets\Game\MainScripts\Scriptable.cpp" />
-    <ClCompile Include="Assets\Game\MainScripts\SpartialGrid.cpp" />
-    <ClCompile Include="Assets\Game\MainScripts\Vec2.cpp" />
     <ClCompile Include="Console.cpp" />
     <ClCompile Include="Display.cpp" />
     <ClCompile Include="Editor.cpp" />
@@ -189,22 +177,28 @@
     <ClCompile Include="NFD\nfd_common.c" />
     <ClCompile Include="NFD\nfd_win.cpp" />
     <ClCompile Include="RenderModifier.cpp" />
-    <ClCompile Include="ScriptManager.cpp" />
+    <ClCompile Include="Scripts\Action.cpp" />
+    <ClCompile Include="Scripts\Animation.cpp" />
+    <ClCompile Include="Scripts\Assets.cpp" />
+    <ClCompile Include="Scripts\Camera.cpp" />
+    <ClCompile Include="Scripts\Collision.cpp" />
+    <ClCompile Include="Scripts\Components.cpp" />
+    <ClCompile Include="Scripts\Entity.cpp" />
+    <ClCompile Include="Scripts\EntityManager.cpp" />
+    <ClCompile Include="Scripts\GradientMaker.cpp" />
+    <ClCompile Include="Scripts\Grid.cpp" />
+    <ClCompile Include="Scripts\LightSource.cpp" />
+    <ClCompile Include="Scripts\lineSegment.cpp" />
+    <ClCompile Include="Scripts\ParticleSystem.cpp" />
+    <ClCompile Include="Scripts\Physics.cpp" />
+    <ClCompile Include="Scripts\PhysicsManager.cpp" />
+    <ClCompile Include="Scripts\ScriptManager.cpp" />
+    <ClCompile Include="Scripts\Search.cpp" />
+    <ClCompile Include="Scripts\SpartialGrid.cpp" />
+    <ClCompile Include="Scripts\Vec2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AbstractEngineTab.hpp" />
-    <ClInclude Include="Assets\Game\MainScripts\Animation.h" />
-    <ClInclude Include="Assets\Game\MainScripts\Components.h" />
-    <ClInclude Include="Assets\Game\MainScripts\Entity.h" />
-    <ClInclude Include="Assets\Game\MainScripts\EntityManager.h" />
-    <ClInclude Include="Assets\Game\MainScripts\Grid.h" />
-    <ClInclude Include="Assets\Game\MainScripts\LightSource.h" />
-    <ClInclude Include="Assets\Game\MainScripts\lineSegment.h" />
-    <ClInclude Include="Assets\Game\MainScripts\ParticleSystem.h" />
-    <ClInclude Include="Assets\Game\MainScripts\Physics.h" />
-    <ClInclude Include="Assets\Game\MainScripts\Scriptable.hpp" />
-    <ClInclude Include="Assets\Game\MainScripts\SpartialGrid.h" />
-    <ClInclude Include="Assets\Game\MainScripts\Vec2.h" />
     <ClInclude Include="Console.h" />
     <ClInclude Include="Display.h" />
     <ClInclude Include="Editor.h" />
@@ -223,7 +217,26 @@
     <ClInclude Include="IMGUI\imstb_truetype.h" />
     <ClInclude Include="Inspector.h" />
     <ClInclude Include="RenderModifier.h" />
-    <ClInclude Include="ScriptManager.h" />
+    <ClInclude Include="Scripts\Action.h" />
+    <ClInclude Include="Scripts\Animation.h" />
+    <ClInclude Include="Scripts\Assets.h" />
+    <ClInclude Include="Scripts\Camera.h" />
+    <ClInclude Include="Scripts\Collision.h" />
+    <ClInclude Include="Scripts\Components.h" />
+    <ClInclude Include="Scripts\Entity.h" />
+    <ClInclude Include="Scripts\EntityManager.h" />
+    <ClInclude Include="Scripts\GradientMaker.h" />
+    <ClInclude Include="Scripts\Grid.h" />
+    <ClInclude Include="Scripts\LightSource.h" />
+    <ClInclude Include="Scripts\lineSegment.h" />
+    <ClInclude Include="Scripts\ParticleSystem.h" />
+    <ClInclude Include="Scripts\Physics.h" />
+    <ClInclude Include="Scripts\PhysicsManager.h" />
+    <ClInclude Include="Scripts\Scriptable.hpp" />
+    <ClInclude Include="Scripts\ScriptManager.h" />
+    <ClInclude Include="Scripts\Search.h" />
+    <ClInclude Include="Scripts\SpartialGrid.h" />
+    <ClInclude Include="Scripts\Vec2.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

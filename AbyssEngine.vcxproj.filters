@@ -78,43 +78,61 @@
     <ClCompile Include="NFD\nfd_common.c">
       <Filter>Source Files\nfd</Filter>
     </ClCompile>
-    <ClCompile Include="Assets\Game\MainScripts\Vec2.cpp">
+    <ClCompile Include="Scripts\Action.cpp">
       <Filter>Source Files\script</Filter>
     </ClCompile>
-    <ClCompile Include="Assets\Game\MainScripts\SpartialGrid.cpp">
+    <ClCompile Include="Scripts\Animation.cpp">
       <Filter>Source Files\script</Filter>
     </ClCompile>
-    <ClCompile Include="Assets\Game\MainScripts\lineSegment.cpp">
+    <ClCompile Include="Scripts\Assets.cpp">
       <Filter>Source Files\script</Filter>
     </ClCompile>
-    <ClCompile Include="Assets\Game\MainScripts\LightSource.cpp">
+    <ClCompile Include="Scripts\Camera.cpp">
       <Filter>Source Files\script</Filter>
     </ClCompile>
-    <ClCompile Include="Assets\Game\MainScripts\Animation.cpp">
+    <ClCompile Include="Scripts\Collision.cpp">
       <Filter>Source Files\script</Filter>
     </ClCompile>
-    <ClCompile Include="Assets\Game\MainScripts\Components.cpp">
+    <ClCompile Include="Scripts\Components.cpp">
       <Filter>Source Files\script</Filter>
     </ClCompile>
-    <ClCompile Include="Assets\Game\MainScripts\Physics.cpp">
+    <ClCompile Include="Scripts\ScriptManager.cpp">
       <Filter>Source Files\script</Filter>
     </ClCompile>
-    <ClCompile Include="Assets\Game\MainScripts\ParticleSystem.cpp">
+    <ClCompile Include="Scripts\Search.cpp">
       <Filter>Source Files\script</Filter>
     </ClCompile>
-    <ClCompile Include="Assets\Game\MainScripts\Entity.cpp">
+    <ClCompile Include="Scripts\SpartialGrid.cpp">
       <Filter>Source Files\script</Filter>
     </ClCompile>
-    <ClCompile Include="Assets\Game\MainScripts\EntityManager.cpp">
+    <ClCompile Include="Scripts\Vec2.cpp">
       <Filter>Source Files\script</Filter>
     </ClCompile>
-    <ClCompile Include="Assets\Game\MainScripts\Grid.cpp">
+    <ClCompile Include="Scripts\PhysicsManager.cpp">
       <Filter>Source Files\script</Filter>
     </ClCompile>
-    <ClCompile Include="Assets\Game\MainScripts\Scriptable.cpp">
+    <ClCompile Include="Scripts\ParticleSystem.cpp">
       <Filter>Source Files\script</Filter>
     </ClCompile>
-    <ClCompile Include="ScriptManager.cpp">
+    <ClCompile Include="Scripts\Physics.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Scripts\lineSegment.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Scripts\LightSource.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Scripts\Grid.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Scripts\GradientMaker.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Scripts\Entity.cpp">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="Scripts\EntityManager.cpp">
       <Filter>Source Files\script</Filter>
     </ClCompile>
   </ItemGroup>
@@ -173,43 +191,64 @@
     <ClInclude Include="RenderModifier.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Assets\Game\MainScripts\Entity.h">
+    <ClInclude Include="Scripts\Scriptable.hpp">
       <Filter>Header Files\script</Filter>
     </ClInclude>
-    <ClInclude Include="Assets\Game\MainScripts\EntityManager.h">
+    <ClInclude Include="Scripts\Search.h">
       <Filter>Header Files\script</Filter>
     </ClInclude>
-    <ClInclude Include="Assets\Game\MainScripts\Grid.h">
+    <ClInclude Include="Scripts\SpartialGrid.h">
       <Filter>Header Files\script</Filter>
     </ClInclude>
-    <ClInclude Include="Assets\Game\MainScripts\LightSource.h">
+    <ClInclude Include="Scripts\Vec2.h">
       <Filter>Header Files\script</Filter>
     </ClInclude>
-    <ClInclude Include="Assets\Game\MainScripts\lineSegment.h">
+    <ClInclude Include="Scripts\Action.h">
       <Filter>Header Files\script</Filter>
     </ClInclude>
-    <ClInclude Include="Assets\Game\MainScripts\ParticleSystem.h">
+    <ClInclude Include="Scripts\Animation.h">
       <Filter>Header Files\script</Filter>
     </ClInclude>
-    <ClInclude Include="Assets\Game\MainScripts\SpartialGrid.h">
+    <ClInclude Include="Scripts\Assets.h">
       <Filter>Header Files\script</Filter>
     </ClInclude>
-    <ClInclude Include="Assets\Game\MainScripts\Vec2.h">
+    <ClInclude Include="Scripts\Camera.h">
       <Filter>Header Files\script</Filter>
     </ClInclude>
-    <ClInclude Include="Assets\Game\MainScripts\Components.h">
+    <ClInclude Include="Scripts\Collision.h">
       <Filter>Header Files\script</Filter>
     </ClInclude>
-    <ClInclude Include="Assets\Game\MainScripts\Animation.h">
+    <ClInclude Include="Scripts\Components.h">
       <Filter>Header Files\script</Filter>
     </ClInclude>
-    <ClInclude Include="Assets\Game\MainScripts\Physics.h">
+    <ClInclude Include="Scripts\Entity.h">
       <Filter>Header Files\script</Filter>
     </ClInclude>
-    <ClInclude Include="Assets\Game\MainScripts\Scriptable.hpp">
+    <ClInclude Include="Scripts\EntityManager.h">
       <Filter>Header Files\script</Filter>
     </ClInclude>
-    <ClInclude Include="ScriptManager.h">
+    <ClInclude Include="Scripts\GradientMaker.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Scripts\Grid.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Scripts\LightSource.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Scripts\lineSegment.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Scripts\ParticleSystem.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Scripts\Physics.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Scripts\PhysicsManager.h">
+      <Filter>Header Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="Scripts\ScriptManager.h">
       <Filter>Header Files\script</Filter>
     </ClInclude>
     <ClInclude Include="EventListener.hpp">

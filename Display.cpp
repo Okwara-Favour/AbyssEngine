@@ -3,42 +3,82 @@
 
 void Display::Init(Editor& editor)
 {
-	displayTexture.create(editor.WinSize().x, editor.WinSize().y);
 	keyAction[ImGuiKey_V] = "ZOOMIN";
 	keyAction[ImGuiKey_B] = "ZOOMOUT";
 	keyAction[ImGuiKey_UpArrow] = "MOVEUP";
 	keyAction[ImGuiKey_DownArrow] = "MOVEDOWN";
 	keyAction[ImGuiKey_LeftArrow] = "MOVELEFT";
 	keyAction[ImGuiKey_RightArrow] = "MOVERIGHT";
+	mainViewPort = editor.window.getDefaultView();
+	std::cout << mainViewPort.getSize().x << " " << mainViewPort.getSize().y << std::endl;
 }
 void Display::Update(Editor& editor)
 {
-	ImGui::Begin("Display", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_MenuBar);
+	ImGui::Begin("Display", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoBackground);
 
 	windowPos = ImGui::GetWindowPos();
 	ImVec2 tabSize = ImGui::GetWindowSize();
 	contentMin = ImGui::GetWindowContentRegionMin();
 	contentMax = ImGui::GetWindowContentRegionMax();
 	ImVec2 contentSize = ImVec2(contentMax.x - contentMin.x, contentMax.y - contentMin.y);
+	ImVec2 contentCenter = ImVec2((contentMax.x - contentMin.x)/2.0f, (contentMax.y - contentMin.y)/2.0f);
+	const auto& texSize = editor.window.getSize();
 	viewPos = ImVec2(contentMin.x + windowPos.x, contentMin.y + windowPos.y);
-	viewScale = ImVec2(editor.WinSize().x / contentSize.x, editor.WinSize().y / contentSize.y);
+	viewScale = ImVec2(editor.WinSize().x / texSize.x, editor.WinSize().y / texSize.y);
 
-	displayTexture.clear(sf::Color(100,100,100));
+	float left = viewPos.x / (float)editor.WinSize().x;
+	float top = viewPos.y / (float)editor.WinSize().y;
+	float width = contentSize.x / (float)editor.WinSize().x;
+	float height = contentSize.y / (float)editor.WinSize().y;
+
+	//mainViewPort = editor.window.getDefaultView();
+	mainViewPort.setViewport(sf::FloatRect(left, top, width, height));
+
+	editor.window.clear();
+
+	sf::Vector2f rsize(editor.WinSize().x + editor.WinSize().x / 2.0f, editor.WinSize().y + editor.WinSize().y / 2.0f);
+	mainRect.setSize(rsize);
+	mainRect.setPosition((editor.WinSize().x / 2.0f) + m_stackedMoveChange.x, 
+						  (editor.WinSize().y / 2.0f) + m_stackedMoveChange.y);
+	mainRect.setOrigin(rsize.x / 2.0f, rsize.y / 2.0f);
+	mainRect.setFillColor(viewColor);
+	MenuTab(editor);
+	HandleKeyActions(editor);
+
+	editor.window.draw(mainRect);
 	for (auto& e : editor.entityManager.getEntities())
 	{
-		DisplaySelected(e, editor.selectedEntity);
+		DisplaySelected(e, editor);
 		EntityMouseDrag(e, editor);
-		if (e->hasComponent<CRectangleShape>())
+		if (editor.gameMode)
 		{
-			displayTexture.draw(e->getComponent<CRectangleShape>().rectangle);
+			if (e->hasComponent<CCamera>())
+			{
+				auto& Cam = e->getComponent<CCamera>();
+				Cam.camera.apply(editor.window, Vec2(left, top), Vec2(width, height));
+				viewColor = Cam.camera.getColor();
+			}
 		}
-		if (e->hasComponent<CCircleShape>())
+		else
 		{
-			displayTexture.draw(e->getComponent<CCircleShape>().circle);
+			if (e->hasComponent<CCamera>())
+			{
+				editor.window.draw(e->getComponent<CCamera>().camera.m_rectangle);
+			}
+			viewColor = editorViewColor;
+			//mainViewPort.setSize(editor.WinSize().x, editor.WinSize().y);
+		}
+		if (e->hasComponent<CBoxRender>())
+		{
+			editor.window.draw(e->getComponent<CBoxRender>().rectangle);
+		}
+		if (e->hasComponent<CCircleRender>())
+		{
+			editor.window.draw(e->getComponent<CCircleRender>().circle);
 		}
 		if (e->hasComponent<CAnimation>())
 		{
-			displayTexture.draw(e->getComponent<CAnimation>().animation.getSprite());
+			editor.window.draw(e->getComponent<CAnimation>().animation.getSprite());
 		}
 	}
 	if (editor.isMouseInTab() && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered() && !entityClicked && editor.selectedEntity)
@@ -46,17 +86,15 @@ void Display::Update(Editor& editor)
 		editor.Save();
 		editor.selectedEntity = nullptr;
 	}
+	//std::cout << texSize.x << " " << texSize.y << std::endl;
 	entityClicked = false;
-	editor.startPosition = ImGui::GetWindowViewport()->GetCenter();
-	ImGui::Image((void*)(intptr_t)displayTexture.getTexture().getNativeHandle(),
-		ImVec2(contentSize.x, contentSize.y),
-		ImVec2(0, 1), ImVec2(1, 0));
-	displayTexture.display();
-	HandleKeyActions(editor);
-	MenuTab(editor);
+	editor.startPosition = contentCenter;
+
+	editor.window.setView(mainViewPort);
+
 	if (ImGui::IsKeyPressed(ImGuiKey_Space))
 	{
-		std::cout << editor.selectedEntity << std::endl;
+		//std::cout << editor.selectedEntity << std::endl;
 	}
 	ImGui::End();
 }
@@ -64,10 +102,8 @@ void Display::Update(Editor& editor)
 void Display::EntityMouseDrag(std::shared_ptr<Entity>& entity, Editor& editor)
 {
 	ImVec2 mousePos = ImGui::GetMousePos();
-	ImVec2 mousePosInWindow = ImVec2(mousePos.x - viewPos.x, mousePos.y - viewPos.y);
-	sf::Vector2f scaledPos = sf::Vector2f(mousePosInWindow.x * viewScale.x, mousePosInWindow.y * viewScale.y);
-	sf::Vector2f mouseWorldPos = WorldPos(scaledPos.x, scaledPos.y);
-	
+	sf::Vector2f mouseWorldPos = WorldPos(editor, mousePos.x, mousePos.y);
+
 	if (editor.isMouseInTab())
 	{
 		bool alreadySelected = editor.selectedEntity && entity->id() == editor.selectedEntity->id();
@@ -90,14 +126,14 @@ bool Display::EntityContainsPos(std::shared_ptr<Entity>& entity, sf::Vector2f& p
 {
 	auto& Size = entity->getComponent<CSize>();
 	auto& Trans = entity->getComponent<CTransform>();
-	if (entity->hasComponent<CRectangleShape>())
+	if (entity->hasComponent<CBoxRender>())
 	{
-		auto& Shape = entity->getComponent<CRectangleShape>();
+		auto& Shape = entity->getComponent<CBoxRender>();
 		return Shape.rectangle.getGlobalBounds().contains(pos);
 	}
-	if (entity->hasComponent<CCircleShape>())
+	if (entity->hasComponent<CCircleRender>())
 	{
-		auto& Shape = entity->getComponent<CCircleShape>();
+		auto& Shape = entity->getComponent<CCircleRender>();
 		return Shape.circle.getGlobalBounds().contains(pos);
 	}
 	if (entity->hasComponent<CAnimation>())
@@ -109,31 +145,64 @@ bool Display::EntityContainsPos(std::shared_ptr<Entity>& entity, sf::Vector2f& p
 	auto maxBounds = Trans.pos + (Size.size / 2.0f);
 	return pos.x >= minBounds.x && pos.x <= maxBounds.x && pos.y >= minBounds.y && pos.y <= maxBounds.y;
 }
-sf::Vector2f Display::WorldPos(float x, float y)
+sf::Vector2f Display::WorldPos(Editor& editor, float x, float y)
 {
-	return displayTexture.mapPixelToCoords(sf::Vector2i(x, y));
+	return editor.window.mapPixelToCoords(sf::Vector2i(x, y));
 }
 
-void Display::DisplaySelected(std::shared_ptr<Entity>& entity, std::shared_ptr<Entity>& selected)
+void Display::DisplaySelectedBound(Editor& editor)
 {
-	if (selected && entity->id() == selected->id())
+	auto& selected = editor.selectedEntity;
+	if (selected->hasComponent<CBoxCollider>())
 	{
-		if (entity->hasComponent<CRectangleShape>())
+		auto& Trans = selected->getComponent<CTransform>();
+		auto& box = selected->getComponent<CBoxCollider>();
+		sf::RectangleShape rect(sf::Vector2f(box.gSize.x, box.gSize.y));
+		rect.setOrigin(box.gSize.x / 2, box.gSize.y / 2);
+		rect.setPosition(Trans.pos.x, Trans.pos.y);
+		rect.setOutlineThickness(2);
+		rect.setOutlineColor(sf::Color::Red);
+		rect.setFillColor(sf::Color::Transparent);
+		editor.window.draw(rect);
+	}
+	if (selected->hasComponent<CCircleCollider>())
+	{
+		auto& Trans = selected->getComponent<CTransform>();
+		auto& circle = selected->getComponent<CCircleCollider>();
+		sf::CircleShape cir(circle.gRadius);
+		cir.setOrigin(circle.gRadius, circle.gRadius);
+		cir.setPosition(Trans.pos.x, Trans.pos.y);
+		cir.setOutlineThickness(2);
+		cir.setOutlineColor(sf::Color::Red);
+		cir.setFillColor(sf::Color::Transparent);
+		editor.window.draw(cir);
+	}
+}
+
+void Display::DisplaySelected(std::shared_ptr<Entity>& entity, Editor& editor)
+{
+	if (editor.selectedEntity && entity->id() == editor.selectedEntity->id())
+	{
+		if (entity->hasComponent<CBoxRender>())
 		{
-			auto rect = entity->getComponent<CRectangleShape>().rectangle;
+			auto rect = entity->getComponent<CBoxRender>().rectangle;
+			rect.scale(1.25, 1.5);
 			rect.setOutlineThickness(2);
 			rect.setOutlineColor(sf::Color::Blue);
 			rect.setFillColor(sf::Color::Transparent);
-			displayTexture.draw(rect);
+			editor.window.draw(rect);
+			DisplaySelectedBound(editor);
 			return;
 		}
-		if (entity->hasComponent<CCircleShape>())
+		if (entity->hasComponent<CCircleRender>())
 		{
-			auto circ = entity->getComponent<CCircleShape>().circle;
+			auto circ = entity->getComponent<CCircleRender>().circle;
+			circ.scale(1.25, 1.25);
 			circ.setOutlineThickness(2);
 			circ.setOutlineColor(sf::Color::Blue);
 			circ.setFillColor(sf::Color::Transparent);
-			displayTexture.draw(circ);
+			editor.window.draw(circ);
+			DisplaySelectedBound(editor);
 			return;
 		}
 		if (entity->hasComponent<CAnimation>())
@@ -141,12 +210,14 @@ void Display::DisplaySelected(std::shared_ptr<Entity>& entity, std::shared_ptr<E
 			auto& sprite = entity->getComponent<CAnimation>().animation.getSprite();
 			auto bounds = sprite.getGlobalBounds();
 			sf::RectangleShape rect(sf::Vector2f(bounds.width, bounds.height));
+			rect.scale(1.25, 1.25);
 			rect.setPosition(sprite.getPosition().x, sprite.getPosition().y);
 			rect.setOutlineThickness(2);
 			rect.setOutlineColor(sf::Color::Blue);
 			rect.setFillColor(sf::Color::Transparent);
 			rect.setOrigin(bounds.width / 2.0f, bounds.height / 2.0f);
-			displayTexture.draw(rect);
+			editor.window.draw(rect);
+			DisplaySelectedBound(editor);
 			return;
 		}
 		auto& Size = entity->getComponent<CSize>();
@@ -158,7 +229,8 @@ void Display::DisplaySelected(std::shared_ptr<Entity>& entity, std::shared_ptr<E
 		rect.setOutlineThickness(2);
 		rect.setOutlineColor(sf::Color::Blue);
 		rect.setFillColor(sf::Color::Transparent);
-		displayTexture.draw(rect);
+		editor.window.draw(rect);
+		DisplaySelectedBound(editor);
 	}
 }
 
@@ -166,22 +238,29 @@ void Display::HandleKeyActions(Editor& editor)
 {
 	if (editor.isMouseInTab())
 	{
-		sf::View view = displayTexture.getView();
 		sf::Vector2f viewVel;
 		for (auto& key : keyAction)
 		{
 			if (!editor.gameMode && ImGui::IsKeyPressed(key.first))
 			{
-				if (key.second == "ZOOMIN")		view.zoom(1.1);
-				if (key.second == "ZOOMOUT")	view.zoom(0.9);
+				if (key.second == "ZOOMIN") {
+					sf::RectangleShape crect = mainRect;
+					mainRect.scale(0.95, 0.95);
+					mainViewPort.zoom(0.95);
+				}
+				if (key.second == "ZOOMOUT") {
+					mainRect.scale(1.05, 1.05);
+					mainViewPort.zoom(1.05);
+				}
 				if (key.second == "MOVEUP")		viewVel.y = -1;
 				if (key.second == "MOVEDOWN")	viewVel.y =	 1;
 				if (key.second == "MOVELEFT")	viewVel.x = -1;
 				if (key.second == "MOVERIGHT")	viewVel.x =  1;
 			}
 		}
-		view.move(viewVel);
-		displayTexture.setView(view);
+		mainViewPort.move(viewVel);
+		m_stackedMoveChange = sf::Vector2f(m_stackedMoveChange.x + viewVel.x,
+			m_stackedMoveChange.y + viewVel.y);
 	}
 }
 
@@ -191,7 +270,7 @@ void Display::MenuTab(Editor& editor)
 	{
 		if (ImGui::BeginMenu("View"))
 		{
-			sf::View view = displayTexture.getView();
+			//sf::View view = editor.window.getView();
 			sf::Vector2f viewVel;
 			if (ImGui::Button("Up"));
 			if (ImGui::IsItemActive())		viewVel.y = -1;
@@ -206,12 +285,21 @@ void Display::MenuTab(Editor& editor)
 			if (ImGui::IsItemActive())		viewVel.x =  1;
 			ImGui::SameLine();
 			if (ImGui::Button("ZOOMIN"));
-			if (ImGui::IsItemActive())		view.zoom(1.1);
+			if (ImGui::IsItemActive()) 
+			{
+				mainRect.scale(0.95, 0.95);
+				mainViewPort.zoom(0.95);
+			}
 			ImGui::SameLine();
 			if (ImGui::Button("ZOOMOUT"));
-			if (ImGui::IsItemActive())		view.zoom(0.9);
-			view.move(viewVel);
-			displayTexture.setView(view);
+			if (ImGui::IsItemActive()) 
+			{
+				mainRect.scale(1.05, 1.05);
+				mainViewPort.zoom(1.05);
+			}
+			mainViewPort.move(viewVel);
+			m_stackedMoveChange = sf::Vector2f(	m_stackedMoveChange.x + viewVel.x,
+												m_stackedMoveChange.y + viewVel.y);
 			ImGui::EndMenu();
 		}
 

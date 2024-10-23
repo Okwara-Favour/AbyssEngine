@@ -55,8 +55,7 @@
                 "R": 0.0,
                 "RENDER": "Circle",
                 "SCRIPTABLES": [
-                    "PlayerMove",
-                    "PlayerShoot"
+                    "PlayerMove"
                 ],
                 "SX": 0.7501000165939331,
                 "SY": 0.75,
@@ -64,68 +63,13 @@
                 "THICKNESS": 2.0
             },
             {
-                "CIRCLECOLLIDER": 0.0,
-                "ENTITY": [
-                    [
-                        {
-                            "FILLCOLOR": [
-                                255,
-                                255,
-                                255,
-                                255
-                            ],
-                            "HASCHILDREN": false,
-                            "NAME": "Circle4",
-                            "OUTLINECOLOR": [
-                                0,
-                                0,
-                                0,
-                                255
-                            ],
-                            "POINTCOUNT": 30,
-                            "PX": 498.8428955078125,
-                            "PY": 240.34109497070313,
-                            "R": 0.0,
-                            "RENDER": "Circle",
-                            "SX": 1.0,
-                            "SY": 1.0,
-                            "TAG": "Default",
-                            "THICKNESS": 0.0
-                        },
-                        {
-                            "FILLCOLOR": [
-                                255,
-                                255,
-                                255,
-                                255
-                            ],
-                            "HASCHILDREN": false,
-                            "NAME": "Circle5",
-                            "OUTLINECOLOR": [
-                                0,
-                                0,
-                                0,
-                                255
-                            ],
-                            "POINTCOUNT": 30,
-                            "PX": 542.5396728515625,
-                            "PY": 325.6744384765625,
-                            "R": 0.0,
-                            "RENDER": "Circle",
-                            "SX": 1.0,
-                            "SY": 1.0,
-                            "TAG": "Default",
-                            "THICKNESS": 0.0
-                        }
-                    ]
-                ],
                 "FILLCOLOR": [
                     68,
                     240,
                     229,
                     255
                 ],
-                "HASCHILDREN": true,
+                "HASCHILDREN": false,
                 "NAME": "Bullet",
                 "OUTLINECOLOR": [
                     0,
@@ -134,8 +78,8 @@
                     255
                 ],
                 "POINTCOUNT": 3,
-                "PX": 531.9610595703125,
-                "PY": 277.8294677734375,
+                "PX": 282.0,
+                "PY": 228.0,
                 "R": 0.0,
                 "RENDER": "Circle",
                 "SCRIPTABLES": [
@@ -147,10 +91,6 @@
                 "THICKNESS": 2.0
             },
             {
-                "BOXCOLLIDER": [
-                    0.0,
-                    0.0
-                ],
                 "FILLCOLOR": [
                     255,
                     255,
@@ -195,10 +135,6 @@
             {
                 "DIRECTORY": "C:\\Users\\Emmanuel-Okwara\\Documents\\Acoding\\Cplus\\Engine\\AbyssEngine\\Assets\\Scripts",
                 "NAME": "BulletScript.lua"
-            },
-            {
-                "DIRECTORY": "C:\\Users\\Emmanuel-Okwara\\Documents\\Acoding\\Cplus\\Engine\\AbyssEngine\\Assets\\Scripts",
-                "NAME": "PlayerShoot.lua"
             }
         ]
     ],

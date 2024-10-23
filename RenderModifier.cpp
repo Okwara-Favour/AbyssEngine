@@ -7,7 +7,7 @@ void RenderModifier::Init(Editor& editor)
 
 	entity->addComponent<CName>("t1");
 	entity->addComponent<CTransform>(Vec2(300, 400));
-	entity->addComponent<CRectangleShape>();
+	entity->addComponent<CBoxRender>();
 	entity->addComponent<CSize>();
 }
 void RenderModifier::Update(Editor& editor)
@@ -15,9 +15,15 @@ void RenderModifier::Update(Editor& editor)
 	for (auto& e : editor.entityManager.getEntities())
 	{
 		SetTransform(e);
+		InfluenceBoundingBox(e);
 		ParentChild(editor, e);
 		if (e->hasComponent<CAnimation>()) e->getComponent<CAnimation>().animation.update();
-		if (e->hasAnyScriptable()) editor.scriptManager.ExecuteEntityScripts(editor, e);
+		if (editor.gameMode) editor.physicsManager.Update(editor.entityManager, e);
+		if (e->hasAnyScriptable()) 
+		{
+			editor.scriptManager.CompileEntityEnvironment(editor, e);
+			editor.scriptManager.ExecuteEntityScripts(editor, e);
+		}
 	}
 
 	if (ImGui::IsKeyPressed(ImGuiKey_E))
@@ -39,45 +45,89 @@ void RenderModifier::SetTransform(std::shared_ptr<Entity>& entity)
 	if (entity->hasComponent<CTransform>())
 	{
 		auto& Trans = entity->getComponent<CTransform>();
+		auto& Size = entity->getComponent<CSize>();
 		Trans.prevPos = Trans.pos;
 
 		Trans.scale.x = std::max(Trans.scale.x, minScale);
 		Trans.scale.y = std::max(Trans.scale.y, minScale);
 
-		if (entity->hasComponent<CRectangleShape>())
+		if (entity->hasComponent<CBoxRender>())
 		{
-			auto& Shape = entity->getComponent<CRectangleShape>();
-			if (entity->hasComponent<CTransform>())
-			{
-				Shape.rectangle.setPosition(Trans.pos.x, Trans.pos.y);
-				Shape.rectangle.setScale(Trans.scale.x, Trans.scale.y);
-				Shape.rectangle.setRotation(Trans.angle);
-			}
+			auto& Shape = entity->getComponent<CBoxRender>();
+			auto Shapesize = Shape.rectangle.getGlobalBounds().getSize();
+			Shape.rectangle.setPosition(Trans.pos.x, Trans.pos.y);
+			Shape.rectangle.setScale(Trans.scale.x, Trans.scale.y);
+			Shape.rectangle.setRotation(Trans.angle);
+			Shape.rectangle.setFillColor(Shape.fillColor);
+			Shape.rectangle.setOutlineColor(Shape.outlineColor);
+			Shape.rectangle.setOutlineThickness(Shape.outlineThickness);
+			Size.size = Vec2(Shapesize.x, Shapesize.y);
+			
 		}
-		if (entity->hasComponent<CCircleShape>())
+		if (entity->hasComponent<CCircleRender>())
 		{
-			auto& Shape = entity->getComponent<CCircleShape>();
-			if (entity->hasComponent<CTransform>())
-			{
-				Shape.circle.setPosition(Trans.pos.x, Trans.pos.y);
-				Shape.circle.setScale(Trans.scale.x, Trans.scale.y);
-				Shape.circle.setRotation(Trans.angle);
-			}
+			auto& Shape = entity->getComponent<CCircleRender>();
+			auto Shapesize = Shape.circle.getGlobalBounds().getSize();
+			
+			Shape.circle.setPosition(Trans.pos.x, Trans.pos.y);
+			Shape.circle.setScale(Trans.scale.x, Trans.scale.y);
+			Shape.circle.setRotation(Trans.angle);
+			Shape.circle.setFillColor(Shape.fillColor);
+			Shape.circle.setOutlineColor(Shape.outlineColor);
+			Shape.circle.setOutlineThickness(Shape.outlineThickness);
+			Shape.circle.setPointCount(Shape.pointCount);
+			Size.size = Vec2(Shapesize.x, Shapesize.y);
+			
 		}
 
 		if (entity->hasComponent<CAnimation>())
 		{
 			auto& Shape = entity->getComponent<CAnimation>();
-			if (entity->hasComponent<CTransform>())
-			{
-				Shape.animation.getSprite().setPosition(Trans.pos.x, Trans.pos.y);
-				Shape.animation.getSprite().setScale(Trans.scale.x, Trans.scale.y);
-				Shape.animation.getSprite().setRotation(Trans.angle);
-			}
+			auto Shapesize = Shape.animation.getSprite().getGlobalBounds().getSize();
+
+			Shape.animation.getSprite().setPosition(Trans.pos.x, Trans.pos.y);
+			Shape.animation.getSprite().setScale(Trans.scale.x, Trans.scale.y);
+			Shape.animation.getSprite().setRotation(Trans.angle);
+			Shape.animation.getSprite().setColor(Shape.fillColor);
+			Size.size = Vec2(Shapesize.x, Shapesize.y);
+		}
+
+		if (entity->hasComponent<CCamera>())
+		{
+			auto& Cam = entity->getComponent<CCamera>();
+			Cam.camera.setPosition(Trans.pos);
+			Cam.camera.setScale(Trans.scale);
+			Cam.camera.setAngle(Trans.angle);
 		}
 	}
 	
 
+}
+
+void RenderModifier::InfluenceBoundingBox(std::shared_ptr<Entity>& entity)
+{
+	if (entity->hasComponent<CBoxCollider>() || entity->hasComponent<CCircleCollider>())
+	{
+		auto& eTrans = entity->getComponent<CTransform>();
+		auto& size = entity->getComponent<CSize>().size;
+		if (entity->hasComponent<CBoxCollider>())
+		{
+			auto& box = entity->getComponent<CBoxCollider>();
+			box.size = size;
+			box.gSize = box.size + box.offset;
+		}
+		if (entity->hasComponent<CCircleCollider>())
+		{
+			auto& circle = entity->getComponent<CCircleCollider>();
+			float diameter = size.length();
+			if (entity->hasComponent<CCircleRender>())
+			{
+				diameter = std::max(size.x, size.y);
+			}
+			circle.radius = diameter / 2.0f;
+			circle.gRadius = circle.radius + circle.offset;
+		}
+	}
 }
 
 void RenderModifier::ParentChild(Editor& editor, std::shared_ptr<Entity>& entity)

@@ -14,9 +14,11 @@ void Inspector::Update(Editor& editor)
 	if (editor.selectedEntity)
 	{
         ImGui::Text("ID: %d", editor.selectedEntity->id());
+        ImGui::Separator();
         if (editor.selectedEntity->hasComponent<CParent>())
         {
             ImGui::Text("Parent: %d", editor.selectedEntity->getComponent<CParent>().id);
+            ImGui::Separator();
         }
         handleTags(editor);
         displayComponents(editor);
@@ -64,15 +66,32 @@ void Inspector::handleComponents(Editor& editor)
         {
             if (ImGui::Selectable(component.c_str()))
             {
-                if (component == "Transform") 
-                {
-                    editor.Save();
-                    editor.selectedEntity->addComponent<CTransform>(Vec2(editor.startPosition.x, editor.startPosition.y));
-                }
                 if (component == "Renderer")
                 {
                     editor.Save();
-                    editor.selectedEntity->addComponent<CRectangleShape>();
+                    editor.selectedEntity->addComponent<CBoxRender>();
+                }
+                if (component == "BoxCollider")
+                {
+                    editor.Save();
+                    auto& size = editor.selectedEntity->getComponent<CSize>().size;
+                    editor.selectedEntity->addComponent<CBoxCollider>(size.x, size.y);
+                }
+                if (component == "CircleCollider")
+                {
+                    editor.Save();
+                    auto& size = editor.selectedEntity->getComponent<CSize>().size;
+                    float diameter = size.length();
+                    if (editor.selectedEntity->hasComponent<CCircleRender>())
+                    {
+                        diameter = std::max(size.x, size.y);
+                    }
+                    editor.selectedEntity->addComponent<CCircleCollider>(diameter/2);
+                }
+                if (component == "Camera")
+                {
+                    editor.Save();
+                    editor.selectedEntity->addComponent<CCamera>();
                 }
             }
         }
@@ -94,17 +113,27 @@ void Inspector::handleComponents(Editor& editor)
         {
             if (ImGui::Selectable(component.c_str()))
             {
-                if (component == "Transform")
-                {
-                    editor.Save();
-                    editor.selectedEntity->removeComponent<CTransform>();
-                }
                 if (component == "Renderer")
                 {
                     editor.Save();
-                    if (editor.selectedEntity->hasComponent<CRectangleShape>()) editor.selectedEntity->removeComponent<CRectangleShape>();
-                    if (editor.selectedEntity->hasComponent<CCircleShape>())editor.selectedEntity->removeComponent<CCircleShape>();
+                    if (editor.selectedEntity->hasComponent<CBoxRender>()) editor.selectedEntity->removeComponent<CBoxRender>();
+                    if (editor.selectedEntity->hasComponent<CCircleRender>())editor.selectedEntity->removeComponent<CCircleRender>();
                     if (editor.selectedEntity->hasComponent<CAnimation>())editor.selectedEntity->removeComponent<CAnimation>();
+                }
+                if (component == "BoxCollider")
+                {
+                    editor.Save();
+                    editor.selectedEntity->removeComponent<CBoxCollider>();
+                }
+                if (component == "CircleCollider")
+                {
+                    editor.Save();
+                    editor.selectedEntity->removeComponent<CCircleCollider>();
+                }
+                if (component == "Camera")
+                {
+                    editor.Save();
+                    editor.selectedEntity->removeComponent<CCamera>();
                 }
             }
         }
@@ -143,10 +172,11 @@ void Inspector::displayComponents(Editor& editor)
             ImGui::Separator();
             ImGui::Text("Rotation");
             ImGui::InputFloat("Angle", &trans.angle);
+            ImGui::Separator();
         }
     }
 
-    if (editor.selectedEntity->hasComponent<CRectangleShape>() || editor.selectedEntity->hasComponent<CCircleShape>()
+    if (editor.selectedEntity->hasComponent<CBoxRender>() || editor.selectedEntity->hasComponent<CCircleRender>()
         || editor.selectedEntity->hasComponent<CAnimation>())
     {
         if (ImGui::CollapsingHeader("Renderer", ImGuiTreeNodeFlags_DefaultOpen))
@@ -155,8 +185,8 @@ void Inspector::displayComponents(Editor& editor)
             std::string modelName = "None";
             if (editor.selectedEntity)
             {
-                if (editor.selectedEntity->hasComponent<CRectangleShape>()) modelName = "default_rectangle";
-                if (editor.selectedEntity->hasComponent<CCircleShape>()) modelName = "default_circle";
+                if (editor.selectedEntity->hasComponent<CBoxRender>()) modelName = "default_rectangle";
+                if (editor.selectedEntity->hasComponent<CCircleRender>()) modelName = "default_circle";
                 if (editor.selectedEntity->hasComponent<CAnimation>()) modelName = editor.selectedEntity->getComponent<CAnimation>().animation.getName();
             }
             if (ImGui::BeginCombo("Model", modelName.c_str()))
@@ -168,26 +198,158 @@ void Inspector::displayComponents(Editor& editor)
                     {
                         if (model.first == "default_rectangle")
                         {
-                            if (modelName != "default_rectangle") editor.Save(), editor.selectedEntity->addComponent<CRectangleShape>();
-                            if (modelName == "default_circle")  editor.selectedEntity->removeComponent<CCircleShape>();
+                            if (modelName != "default_rectangle") editor.Save(), editor.selectedEntity->addComponent<CBoxRender>();
+                            if (modelName == "default_circle")  editor.selectedEntity->removeComponent<CCircleRender>();
                             if (modelName != "default_circle" && modelName != "default_rectangle") editor.selectedEntity->removeComponent<CAnimation>();
                         }
                         else if (model.first == "default_circle")
                         {
-                            if (modelName != "default_circle") editor.Save(), editor.selectedEntity->addComponent<CCircleShape>();
-                            if (modelName == "default_rectangle") editor.selectedEntity->removeComponent<CRectangleShape>();
+                            if (modelName != "default_circle") editor.Save(), editor.selectedEntity->addComponent<CCircleRender>();
+                            if (modelName == "default_rectangle") editor.selectedEntity->removeComponent<CBoxRender>();
                             if (modelName != "default_circle" && modelName != "default_rectangle") editor.selectedEntity->removeComponent<CAnimation>();
                         }
                         else
                         {
                             if (modelName != model.second.getName()) editor.Save(), editor.selectedEntity->addComponent<CAnimation>(model.second);
-                            if (modelName == "default_rectangle") editor.selectedEntity->removeComponent<CRectangleShape>();
-                            if (modelName == "default_circle") editor.selectedEntity->removeComponent<CCircleShape>();
+                            if (modelName == "default_rectangle") editor.selectedEntity->removeComponent<CBoxRender>();
+                            if (modelName == "default_circle") editor.selectedEntity->removeComponent<CCircleRender>();
                         }
                     }
                 }
                 ImGui::EndCombo();
             }
+            ImGui::Separator();
+            bool hasBox = editor.selectedEntity->hasComponent<CBoxRender>();
+            bool hasCircle = editor.selectedEntity->hasComponent<CCircleRender>();
+            bool hasAnim = editor.selectedEntity->hasComponent<CAnimation>();
+
+            ImGui::PushItemWidth(200);
+
+            auto& ShapeColor =  hasBox ? editor.selectedEntity->getComponent<CBoxRender>().fillColor :
+                                hasCircle ? editor.selectedEntity->getComponent<CCircleRender>().fillColor :
+                                editor.selectedEntity->getComponent<CAnimation>().fillColor;
+
+            // Convert sf::Color to a float array (normalized [0, 1] for ImGui)
+            float color[4] = {
+                ShapeColor.r / 255.0f,
+                ShapeColor.g / 255.0f,
+                ShapeColor.b / 255.0f,
+                ShapeColor.a / 255.0f
+            };
+
+            // ImGui color picker for the fill color
+            if (ImGui::ColorEdit4("Fill Color", color))
+            {
+                // Convert float array back to sf::Color (scaled to [0, 255])
+                ShapeColor = sf::Color(
+                    static_cast<sf::Uint8>(color[0] * 255),
+                    static_cast<sf::Uint8>(color[1] * 255),
+                    static_cast<sf::Uint8>(color[2] * 255),
+                    static_cast<sf::Uint8>(color[3] * 255)
+                );
+            }
+            ImGui::Separator();
+            if (hasBox || hasCircle)
+            {
+                auto& ShapeOutlineColor = hasBox ? editor.selectedEntity->getComponent<CBoxRender>().outlineColor :
+                    editor.selectedEntity->getComponent<CCircleRender>().outlineColor;
+
+                float outlineColor[4] = {
+                    ShapeOutlineColor.r / 255.0f,
+                    ShapeOutlineColor.g / 255.0f,
+                    ShapeOutlineColor.b / 255.0f,
+                    ShapeOutlineColor.a / 255.0f
+                };
+
+                // ImGui color picker for the fill color
+                if (ImGui::ColorEdit4("Outline Color", outlineColor))
+                {
+                    // Convert float array back to sf::Color (scaled to [0, 255])
+                    ShapeOutlineColor = sf::Color(
+                        static_cast<sf::Uint8>(outlineColor[0] * 255),
+                        static_cast<sf::Uint8>(outlineColor[1] * 255),
+                        static_cast<sf::Uint8>(outlineColor[2] * 255),
+                        static_cast<sf::Uint8>(outlineColor[3] * 255)
+                    );
+                }
+
+                ImGui::Separator();
+                auto& OutlineThickness = hasBox ? editor.selectedEntity->getComponent<CBoxRender>().outlineThickness :
+                    editor.selectedEntity->getComponent<CCircleRender>().outlineThickness;
+                //ImGui::InputScalar("Thickness", ImGuiDataType_U64, &OutlineThickness);
+                ImGui::InputFloat("Thickness", &OutlineThickness);
+                ImGui::Separator();
+            }
+            if (hasCircle)
+            {
+                auto& PointCount = editor.selectedEntity->getComponent<CCircleRender>().pointCount;
+                ImGui::InputScalar("Points", ImGuiDataType_U64, &PointCount);
+                ImGui::Separator();
+            }
+            ImGui::PopItemWidth();
+        }
+    }
+
+    if (editor.selectedEntity->hasComponent<CCamera>())
+    {
+        auto& circle = editor.selectedEntity->getComponent<CCamera>();
+
+        if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::PushItemWidth(200);
+            auto& Cam = editor.selectedEntity->getComponent<CCamera>().camera;
+            auto& SceneColor = Cam.getColor();
+
+            // Convert sf::Color to a float array (normalized [0, 1] for ImGui)
+            float color[4] = {
+                SceneColor.r / 255.0f,
+                SceneColor.g / 255.0f,
+                SceneColor.b / 255.0f,
+                SceneColor.a / 255.0f
+            };
+
+            // ImGui color picker for the fill color
+            if (ImGui::ColorEdit4("Scene Color", color))
+            {
+                Cam.setColor(
+                    static_cast<int>(color[0] * 255),
+                    static_cast<int>(color[1] * 255),
+                    static_cast<int>(color[2] * 255),
+                    static_cast<int>(color[3] * 255)
+                );
+            }
+            ImGui::PopItemWidth();
+            ImGui::Separator();
+        }
+    }
+
+    if (editor.selectedEntity->hasComponent<CBoxCollider>())
+    {
+        auto& box = editor.selectedEntity->getComponent<CBoxCollider>();
+
+        if (ImGui::CollapsingHeader("Box Collider", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::InputFloat("Width Offset", &box.offset.x);
+            ImGui::SameLine();
+            ImGui::InputFloat("Height Offset", &box.offset.y);
+            ImGui::Separator(); // Adds a horizontal line separator
+            ImGui::Text("Width: %f", box.gSize.x);
+            ImGui::SameLine();
+            ImGui::Text("Height: %f", box.gSize.y);
+            ImGui::Separator(); // Adds a horizontal line separator
+        }
+    }
+
+    if (editor.selectedEntity->hasComponent<CCircleCollider>())
+    {
+        auto& circle = editor.selectedEntity->getComponent<CCircleCollider>();
+
+        if (ImGui::CollapsingHeader("Circle Collider", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::InputFloat("Radius Offset", &circle.offset);
+            ImGui::Separator(); // Adds a horizontal line separator
+            ImGui::Text("Radius: %f", circle.gRadius);
+            ImGui::Separator(); // Adds a horizontal line separator
         }
     }
 
@@ -266,31 +428,10 @@ void Inspector::displayComponents(Editor& editor)
                             ImGui::InputFloat2(k.first.c_str(), vecArray);
                             varValue = std::make_any<Vec2>(Vec2(vecArray[0], vecArray[1]));
                         }
+                        ImGui::Separator();
                     }
                 }
             }
         }
     }
-
-    /*if (editor.selectedEntity->hasScriptable<Scriptable>())
-    {
-        for (const auto& script : editor.selectedEntity->m_scriptables)
-        {
-            std::string cname = typeid(*script).name();
-            if (ImGui::CollapsingHeader(cname.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
-            {
-                for (auto& k : script->variableMap)
-                {
-                    auto& valuePtr = k.second; // This is a shared_ptr<std::any>
-                    // Dereference the shared_ptr to access the std::any
-                    const std::any& value = *valuePtr;
-                    if (value.type() == typeid(std::reference_wrapper<float>)) {
-                        // Perform the cast to retrieve the reference
-                        float& floatValue = std::any_cast<std::reference_wrapper<float>>(value).get(); // Get reference
-                        ImGui::InputFloat(k.first.c_str(), &floatValue);
-                    }
-                }
-            }
-        }
-    }*/
 }
