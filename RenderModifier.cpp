@@ -136,9 +136,13 @@ void RenderModifier::ParentChild(Editor& editor, std::shared_ptr<Entity>& entity
 	{
 		auto& eTrans = entity->getComponent<CTransform>();
 		auto& eChildren = entity->getComponent<CChildren>().children;
+		auto& eChildCopies = entity->getComponent<CChildren>().childEntities;
 		for (auto& c : eChildren)
 		{
 			auto& child = editor.entityManager.getEntity(c.first);
+
+			//std::cout << "is null " << (child == nullptr) << std::endl;
+
 			if (child->hasComponent<CTransform>())
 			{
 				
@@ -162,6 +166,8 @@ void RenderModifier::ParentChild(Editor& editor, std::shared_ptr<Entity>& entity
 				cParent.initialScale = eTrans.scale;
 				cParent.initialPosition = eTrans.pos;
 				cParent.initialAngle = eTrans.angle;
+
+				//eChildCopies[child->id()] = editor.entityManager.MakeEntityCopy(child);
 			}
 		}
 	}

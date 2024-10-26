@@ -10,7 +10,26 @@ void Hierarchy::Update(Editor& editor)
 {
 	ImGui::Begin("Hierarchy");
 	ImGui::Text("Content of Tab Hierarchy");
-    DisplayEntities(editor);
+
+    if (ImGui::BeginTabBar("EntityTabs"))
+    {
+        // Tab for displaying entities
+        if (ImGui::BeginTabItem("Entities"))
+        {
+            DisplayEntities(editor);
+            ImGui::EndTabItem();
+        }
+
+        // Tab for displaying prefabs
+        if (ImGui::BeginTabItem("Prefabs"))
+        {
+            DisplayPrefabs(editor); // Assuming you have a DisplayPrefabs function
+            ImGui::EndTabItem();
+        }
+
+        ImGui::EndTabBar();
+    }
+
     if (clock.getElapsedTime() > sf::seconds(duration)) clickCount = 0;
     if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
     {
@@ -18,6 +37,7 @@ void Hierarchy::Update(Editor& editor)
         {
             // Reset the current selection to null if no entity is hovered and the mouse is clicked
             editor.selectedEntity = nullptr;
+            editor.selectedPrefab = nullptr;
         }
     }
 	ImGui::End();
@@ -70,6 +90,42 @@ void Hierarchy::DisplayEntities(Editor& editor)
     }
 }
 
+void Hierarchy::DisplayPrefabs(Editor& editor)
+{
+    const auto& entities = editor.prefabManager.getEntities();
+
+    for (const auto& entity : entities)
+    {
+        if (entity->hasComponent<CParent>()) continue;
+        ImGui::PushID(entity->id());
+
+        if (entity->hasComponent<CChildren>())
+        {
+            auto& children = entity->getComponent<CChildren>();
+            if (ImGui::ArrowButton("##arrow", (children._editor_use_open) ? ImGuiDir_Down : ImGuiDir_Right))
+            {
+                children._editor_use_open = !children._editor_use_open;
+            }
+            ImGui::SameLine();
+        }
+
+        if (ImGui::Selectable(entity->getComponent<CName>().name.c_str(), editor.selectedPrefab && editor.selectedPrefab->id() == entity->id(), ImGuiSelectableFlags_AllowDoubleClick))
+        {
+            if (editor.selectedPrefab && editor.selectedPrefab->id() != entity->id()) editor.Save();
+            editor.selectedPrefab = entity;
+            editor.selectedEntity = nullptr;
+            //std::cout << editor.selectedPrefab->id() << std::endl;
+            /*if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
+            {
+                auto& name = entity->getComponent<CName>().name;
+                std::fill(nameBuffer, nameBuffer + sizeof(nameBuffer), '\0');
+                std::copy(name.begin(), name.end(), nameBuffer);
+                editingEntity = entity;
+            }*/
+        }
+        ImGui::PopID();
+    }
+}
 
 void Hierarchy::ParentChildDropdown(Editor& editor, std::shared_ptr<Entity> entity)
 {

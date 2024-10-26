@@ -84,6 +84,7 @@ Editor::Editor()
 	engineTabs["Display"] = std::make_unique<Display>();
 
 	scriptManager.lua.set_function("ConsoleText", &Editor::ConsoleText, this);
+	scriptManager.lua.set_function("GetPrefabByName", &EntityManager::getEntityName, &prefabManager);
 	scriptManager.lua["EManager"] = &entityManager;
 	scriptManager.lua["Listener"] = &eventListener;
 
@@ -99,9 +100,12 @@ Editor::Editor()
 	Camera::Lua(scriptManager.lua);
 	CCircleCollider::Lua(scriptManager.lua);
 	CBoxCollider::Lua(scriptManager.lua);
+	CCamera::Lua(scriptManager.lua);
 	LuaBindSFML(scriptManager.lua);
 	Init();
 	command.Save(entityManager, selectedEntity);
+
+	LoadPrefabData();
 }
 void Editor::Init()
 {
@@ -114,8 +118,8 @@ void Editor::ProcessEvent(sf::Event& event) { ImGui::SFML::ProcessEvent(event); 
 void Editor::Render() { ImGui::SFML::Render(window); }
 void Editor::CloseTabs() 
 {
-	scriptManager.Close();
 	ImGui::SFML::Shutdown();
+	scriptManager.Close();
 }
 void Editor::MainPage()
 {
@@ -134,6 +138,7 @@ void Editor::Update()
 	MainPage();
 	command.Execute(entityManager, selectedEntity);
 	entityManager.update();
+	prefabManager.update();
 	scriptManager.UpdateSOL();
 	updateAnimation();
 	try
@@ -251,13 +256,14 @@ void Editor::updateAnimation()
 void Editor::AddChildEntitiesToSceneFile(nlohmann::json& dict, const std::shared_ptr<Entity> parent)
 {
 	auto& children = parent->getComponent<CChildren>().children;
-	std::vector<nlohmann::json> childEntityRecord;
-
+	
 	for (auto& child : children)
 	{
 		auto& e = entityManager.getEntity(child.first);
 		nlohmann::json entityField;
+		entityField["ID"] = e->id();
 		entityField["TAG"] = e->tag();
+		entityField["PREFAB"] = { e->prefabData().first, e->prefabData().second };
 		if (e->hasComponent<CTransform>())
 		{
 			auto& trans = e->getComponent<CTransform>();
@@ -336,16 +342,22 @@ void Editor::AddChildEntitiesToSceneFile(nlohmann::json& dict, const std::shared
 		{
 			entityField["HASCHILDREN"] = false;
 		}
-		childEntityRecord.push_back(entityField);
+		dict["ENTITY"] += entityField;
 	}
-	dict["ENTITY"] += childEntityRecord;
 }
 
 void Editor::LoadChildEntitiesFromSceneFile(const nlohmann::json& dict, const std::shared_ptr<Entity> parent)
 {
-	for (const auto& entityField : dict[0])
+	for (const auto& entityField : dict)
 	{
-		auto entity = entityManager.addEntity(entityField["TAG"].get<std::string>());
+		size_t id = entityField["ID"].get<size_t>();
+		auto entity = entityManager.addEntity(entityField["TAG"].get<std::string>(), id);
+
+		if (entityField.contains("PREFAB"))
+		{
+			auto prefabData = entityField["PREFAB"];
+			entity->m_prefabID = { prefabData[0].get<bool>(), prefabData[1].get<size_t>() };
+		}
 		entity->addComponent<CName>(entityField["NAME"].get<std::string>());
 		Vec2 pos(entityField["PX"].get<float>(), entityField["PY"].get<float>());
 		Vec2 scale(entityField["SX"].get<float>(), entityField["SY"].get<float>());
@@ -446,7 +458,6 @@ void Editor::LoadChildEntitiesFromSceneFile(const nlohmann::json& dict, const st
 		auto& parentTrans = parent->getComponent<CTransform>();
 		entity->addComponent<CParent>(parent->id(), parent->tag(), parentTrans.pos, parentTrans.scale, parentTrans.angle);
 		parent->getComponent<CChildren>().children.push_back({ entity->id(), entity->tag() });
-		parent->getComponent<CChildren>().childEntities[entity->id()] = entityManager.MakeEntityCopy(entity);
 	}
 }
 
@@ -454,48 +465,17 @@ void Editor::SaveScene()
 {
 	nlohmann::json SceneCollection;
 
-	std::vector<nlohmann::json> entityRecord;
-	std::vector<nlohmann::json> textureRecord;
-	std::vector<nlohmann::json> animationRecord;
-	std::vector<nlohmann::json> scriptRecord;
-	std::vector<nlohmann::json> globalRecord;
-
 	nlohmann::json globalField;
-	globalField["DURATION"] = duration;
-	globalField["TRANSLATE_FACTOR"] = translateFactor;
-	globalField["SCALE_FACTOR"] = scaleFactor;
-	globalField["ROTATE_FACTOR"] = rotateFactor;
-	globalRecord.push_back(globalField);
-
-	SceneCollection["GLOBAL"] += globalRecord;
-
-	for (auto& t : texturePathMap)
-	{
-		nlohmann::json textureField;
-		textureField["NAME"] = t.first;
-		textureField["PATH"] = t.second;
-		textureRecord.push_back(textureField);
-	}
-
-	SceneCollection["TEXTURE"] += textureRecord;
-
-	for (auto& a : animationMap)
-	{
-		nlohmann::json animationField;
-		animationField["NAME"] = a.first;
-		animationField["TEXTURE"] = a.second.getTexName();
-		animationField["FRAMECOUNT"] = a.second.getFrameCount();
-		animationField["SPEED"] = a.second.getSpeed();
-		animationRecord.push_back(animationField);
-	}
-
-	SceneCollection["ANIMATION"] += animationRecord;
+	globalField["TOTAL"] = entityManager.m_totalEntities;
+	SceneCollection["STATISTICS"] += globalField;
 
 	for (auto& e : entityManager.getEntities())
 	{
 		if (e->hasComponent<CParent>()) continue;
 		nlohmann::json entityField;
+		entityField["ID"] = e->id();
 		entityField["TAG"] = e->tag();
+		entityField["PREFAB"] = { e->prefabData().first, e->prefabData().second };
 		if (e->hasComponent<CTransform>())
 		{
 			auto& trans = e->getComponent<CTransform>();
@@ -575,26 +555,10 @@ void Editor::SaveScene()
 		{
 			entityField["HASCHILDREN"] = false;
 		}
-		entityRecord.push_back(entityField);
+		SceneCollection["ENTITY"] += entityField;
 	}
-	SceneCollection["ENTITY"] += entityRecord;
-
-	for (auto& s : scriptManager.scriptsDirectoryMap)
-	{
-		if (scriptManager.hasEnvironment(s.first))
-		{
-			nlohmann::json scriptField;
-			scriptField["NAME"] = s.first + ".lua";
-			scriptField["DIRECTORY"] = s.second.string();
-			scriptRecord.push_back(scriptField);
-		}
-	}
-
-	SceneCollection["SCRIPT"] += scriptRecord;
-
-	//std::cout << SceneCollection.dump(4) << std::endl;
-
-	std::ofstream outFile("Scene.json");
+	
+	std::ofstream outFile(saveFile);
 	if (outFile.is_open())
 	{
 		outFile << SceneCollection.dump(4); // Pretty print with 4 spaces
@@ -613,7 +577,7 @@ void Editor::LoadScene()
 	nlohmann::json SceneCollection;
 
 	// Open and read the JSON file
-	std::ifstream inFile("Scene.json");
+	std::ifstream inFile(saveFile);
 	if (inFile.is_open())
 	{
 		inFile >> SceneCollection;
@@ -627,80 +591,32 @@ void Editor::LoadScene()
 
 	command.Clear();
 	selectedEntity = nullptr;
-	
-	if (SceneCollection.contains("GLOBAL"))
+
+	scriptManager.ResetClass();
+	entityManager = EntityManager();
+
+	if (SceneCollection.contains("STATISTICS"))
 	{
-		auto globalRecord = SceneCollection["GLOBAL"];
-		//std::cout << globalRecord << std::endl;
+		auto globalRecord = SceneCollection["STATISTICS"];
 		if (!globalRecord.empty())
 		{
-			duration = globalRecord[0][0]["DURATION"].get<float>();
-			translateFactor = globalRecord[0][0]["TRANSLATE_FACTOR"].get<float>();
-			scaleFactor = globalRecord[0][0]["SCALE_FACTOR"].get<float>();
-			rotateFactor = globalRecord[0][0]["ROTATE_FACTOR"].get<float>();
+			entityManager.m_totalEntities = globalRecord[0]["TOTAL"].get<size_t>();
 		}
 	}
 
-	// Process TEXTURE
-	texturePathMap.clear();
-	textureMap.clear();
-	if (SceneCollection.contains("TEXTURE"))
-	{
-		//std::cout << SceneCollection["TEXTURE"][0] << std::endl;
-		for (const auto& textureField : SceneCollection["TEXTURE"][0])
-		{
-			std::string name = textureField["NAME"].get<std::string>();
-			std::string path = textureField["PATH"].get<std::string>();
-			texturePathMap[name] = path;
-			sf::Texture texture;
-			texture.loadFromFile(path);
-			textureMap[name] = texture; // Load or process texture as needed
-		}
-	}
-
-	// Process ANIMATION
-	animationMap.clear();
-	if (SceneCollection.contains("ANIMATION"))
-	{
-		//std::cout << SceneCollection["ANIMATION"][0] << std::endl;
-		for (const auto& animationField : SceneCollection["ANIMATION"][0])
-		{
-			std::string name = animationField["NAME"].get<std::string>();
-			if (name == "default_rectangle" || name == "default_circle")
-			{
-				animationMap[name] = Animation();
-			}
-			else
-			{
-				std::string texName = animationField["TEXTURE"].get<std::string>();
-				int framecount = animationField["FRAMECOUNT"].get<int>();
-				int speed = animationField["SPEED"].get<int>();
-				Animation anim(name, texName, textureMap[texName], framecount, speed);
-				animationMap[name] = anim;
-			}
-		}
-	}
-
-	scriptManager.Close();
-
-	if (SceneCollection.contains("SCRIPT"))
-	{
-		for (const auto& scriptField : SceneCollection["SCRIPT"][0])
-		{
-			std::string filename = scriptField["NAME"].get<std::string>();
-			std::string directoryName = scriptField["DIRECTORY"].get<std::string>();
-			fs::path directory(directoryName);
-			scriptManager.LoadScript(*this, filename, directory);
-		}
-	}
-
-	entityManager = EntityManager();
 	if (SceneCollection.contains("ENTITY"))
 	{
 		//std::cout << SceneCollection["ENTITY"][0] << std::endl;
-		for (const auto& entityField : SceneCollection["ENTITY"][0])
+		for (const auto& entityField : SceneCollection["ENTITY"])
 		{
-			auto entity = entityManager.addEntity(entityField["TAG"].get<std::string>());
+			size_t id = entityField["ID"].get<size_t>();
+			auto entity = entityManager.addEntity(entityField["TAG"].get<std::string>(), id);
+
+			if (entityField.contains("PREFAB"))
+			{
+				auto prefabData = entityField["PREFAB"];
+				entity->m_prefabID = { prefabData[0].get<bool>(), prefabData[1].get<size_t>() };
+			}
 			entity->addComponent<CName>(entityField["NAME"].get<std::string>());
 			Vec2 pos(entityField["PX"].get<float>(), entityField["PY"].get<float>());
 			Vec2 scale(entityField["SX"].get<float>(), entityField["SY"].get<float>());
@@ -803,8 +719,550 @@ void Editor::LoadScene()
 			}
 		}
 	}
-	
 	load = false;
+}
+
+void Editor::SaveChildPrefabData(nlohmann::json& dict, const std::shared_ptr<Entity> parent)
+{
+	auto& children = parent->getComponent<CChildren>().childEntities;
+	for (auto& child : children)
+	{
+		auto childEntity = std::any_cast<std::shared_ptr<Entity>>(child.second);
+		auto& e = childEntity;
+		nlohmann::json entityField;
+		entityField["ID"] = e->id();
+		entityField["TAG"] = e->tag();
+		entityField["PREFAB"] = { e->prefabData().first, e->prefabData().second };
+		if (e->hasComponent<CTransform>())
+		{
+			auto& trans = e->getComponent<CTransform>();
+			entityField["PX"] = trans.pos.x;
+			entityField["PY"] = trans.pos.y;
+			entityField["SX"] = trans.scale.x;
+			entityField["SY"] = trans.scale.y;
+			entityField["R"] = trans.angle;
+		}
+		if (e->hasComponent<CName>())
+		{
+			entityField["NAME"] = e->getComponent<CName>().name;
+		}
+		else {
+			entityField["NAME"] = "Unnamed";
+		}
+		if (e->hasComponent<CBoxRender>())
+		{
+			auto& boxRender = e->getComponent<CBoxRender>();
+			entityField["RENDER"] = "Rectangle";
+			entityField["FILLCOLOR"] = { boxRender.fillColor.r, boxRender.fillColor.g, boxRender.fillColor.b, boxRender.fillColor.a };
+			entityField["OUTLINECOLOR"] = { boxRender.outlineColor.r, boxRender.outlineColor.g, boxRender.outlineColor.b, boxRender.outlineColor.a };
+			entityField["THICKNESS"] = boxRender.outlineThickness;
+		}
+		else if (e->hasComponent<CCircleRender>())
+		{
+			auto& circleRender = e->getComponent<CCircleRender>();
+			entityField["RENDER"] = "Circle";
+			entityField["POINTCOUNT"] = circleRender.pointCount;
+			entityField["FILLCOLOR"] = { circleRender.fillColor.r, circleRender.fillColor.g, circleRender.fillColor.b, circleRender.fillColor.a };
+			entityField["OUTLINECOLOR"] = { circleRender.outlineColor.r, circleRender.outlineColor.g, circleRender.outlineColor.b, circleRender.outlineColor.a };
+			entityField["THICKNESS"] = circleRender.outlineThickness;
+		}
+		else if (e->hasComponent<CAnimation>())
+		{
+			auto& animComponent = e->getComponent<CAnimation>();
+			entityField["RENDER"] = animComponent.animation.getName();
+			entityField["REPEAT"] = animComponent.repeat;
+			entityField["FILLCOLOR"] = { animComponent.fillColor.r, animComponent.fillColor.g, animComponent.fillColor.b, animComponent.fillColor.a };
+		}
+		else {
+			entityField["RENDER"] = "None";
+		}
+		if (e->hasComponent<CCamera>())
+		{
+			auto& cam = e->getComponent<CCamera>().camera;
+			entityField["CAMERACOLOR"] = { cam.getColor().r, cam.getColor().g, cam.getColor().b, cam.getColor().a };
+		}
+		if (e->hasComponent<CBoxCollider>())
+		{
+			auto& boxOff = e->getComponent<CBoxCollider>().offset;
+			entityField["BOXCOLLIDER"] = { boxOff.x, boxOff.y };
+		}
+		if (e->hasComponent<CCircleCollider>())
+		{
+			auto& circleOff = e->getComponent<CCircleCollider>().offset;
+			entityField["CIRCLECOLLIDER"] = circleOff;
+		}
+		if (e->hasAnyScriptable())
+		{
+			nlohmann::json scriptablesArray = nlohmann::json::array();
+
+			for (auto& s : e->getScriptables())
+			{
+				scriptablesArray.push_back(s.first);
+			}
+
+			entityField["SCRIPTABLES"] = scriptablesArray;
+		}
+		if (e->hasComponent<CChildren>())
+		{
+			entityField["HASCHILDREN"] = true;
+			
+			SaveChildPrefabData(entityField, e);
+		}
+		else
+		{
+			entityField["HASCHILDREN"] = false;
+		}
+		dict["ENTITY"] += entityField;
+	}
+}
+void Editor::LoadChildPrefabData(const nlohmann::json& dict, const std::shared_ptr<Entity> parent)
+{
+	for (const auto& entityField : dict)
+	{
+		size_t id = entityField["ID"].get<size_t>();
+		auto entity = prefabManager.createEntity(entityField["TAG"].get<std::string>(), id);
+
+		if (entityField.contains("PREFAB"))
+		{
+			auto prefabData = entityField["PREFAB"];
+			entity->m_prefabID = { prefabData[0].get<bool>(), prefabData[1].get<size_t>() };
+		}
+		entity->addComponent<CName>(entityField["NAME"].get<std::string>());
+		Vec2 pos(entityField["PX"].get<float>(), entityField["PY"].get<float>());
+		Vec2 scale(entityField["SX"].get<float>(), entityField["SY"].get<float>());
+		float angle = entityField["R"].get<float>();
+		entity->addComponent<CTransform>(pos, scale, angle);
+		entity->addComponent<CSize>();
+		std::string renderName = entityField["RENDER"].get<std::string>();
+		if (renderName == "Rectangle")
+		{
+			auto& BoxRender = entity->addComponent<CBoxRender>();
+			BoxRender.outlineThickness = entityField["THICKNESS"].get<float>();
+			auto fillColorArray = entityField["FILLCOLOR"];
+			BoxRender.fillColor = sf::Color(
+				fillColorArray[0].get<uint8_t>(),
+				fillColorArray[1].get<uint8_t>(),
+				fillColorArray[2].get<uint8_t>(),
+				fillColorArray[3].get<uint8_t>()
+			);
+
+			// Load outline color for Rectangle
+			auto outlineColorArray = entityField["OUTLINECOLOR"];
+			BoxRender.outlineColor = sf::Color(
+				outlineColorArray[0].get<uint8_t>(),
+				outlineColorArray[1].get<uint8_t>(),
+				outlineColorArray[2].get<uint8_t>(),
+				outlineColorArray[3].get<uint8_t>()
+			);
+		}
+		if (renderName == "Circle")
+		{
+			auto& CircleRender = entity->addComponent<CCircleRender>();
+			CircleRender.outlineThickness = entityField["THICKNESS"].get<float>();
+			CircleRender.pointCount = entityField["POINTCOUNT"].get<size_t>();
+			auto fillColorArray = entityField["FILLCOLOR"];
+			CircleRender.fillColor = sf::Color(
+				fillColorArray[0].get<uint8_t>(),
+				fillColorArray[1].get<uint8_t>(),
+				fillColorArray[2].get<uint8_t>(),
+				fillColorArray[3].get<uint8_t>()
+			);
+
+			// Load outline color for Circle
+			auto outlineColorArray = entityField["OUTLINECOLOR"];
+			CircleRender.outlineColor = sf::Color(
+				outlineColorArray[0].get<uint8_t>(),
+				outlineColorArray[1].get<uint8_t>(),
+				outlineColorArray[2].get<uint8_t>(),
+				outlineColorArray[3].get<uint8_t>()
+			);
+		}
+		if (renderName != "Circle" && renderName != "Rectangle")
+		{
+			auto& Anim = entity->addComponent<CAnimation>(animationMap[renderName]);
+			Anim.repeat = entityField["REPEAT"].get<bool>();
+			auto fillColorArray = entityField["FILLCOLOR"];
+			Anim.fillColor = sf::Color(
+				fillColorArray[0].get<uint8_t>(),
+				fillColorArray[1].get<uint8_t>(),
+				fillColorArray[2].get<uint8_t>(),
+				fillColorArray[3].get<uint8_t>()
+			);
+		}
+		if (entityField.contains("CAMERACOLOR"))
+		{
+			auto fillColorArray = entityField["CAMERACOLOR"];
+			entity->addComponent<CCamera>().camera.setColor(
+				fillColorArray[0].get<uint8_t>(),
+				fillColorArray[1].get<uint8_t>(),
+				fillColorArray[2].get<uint8_t>(),
+				fillColorArray[3].get<uint8_t>()
+			);
+		}
+		if (entityField.contains("BOXCOLLIDER"))
+		{
+			auto boxOff = entityField["BOXCOLLIDER"];
+			entity->addComponent<CBoxCollider>();
+			entity->getComponent<CBoxCollider>().offset = Vec2(boxOff[0].get<float>(), boxOff[1].get<float>());
+		}
+		if (entityField.contains("CIRCLECOLLIDER"))
+		{
+			auto circleOff = entityField["CIRCLECOLLIDER"];
+			entity->addComponent<CCircleCollider>();
+			entity->getComponent<CCircleCollider>().offset = circleOff.get<float>();
+		}
+		if (entityField.contains("SCRIPTABLES"))
+		{
+			for (const auto& scriptName : entityField["SCRIPTABLES"])
+			{
+				std::string script = scriptName.get<std::string>();
+				entity->addScriptable(script);
+			}
+		}
+		if (entityField["HASCHILDREN"].get<bool>())
+		{
+			entity->addComponent<CChildren>();
+			LoadChildPrefabData(entityField["ENTITY"], entity);
+		}
+		auto& parentTrans = parent->getComponent<CTransform>();
+		entity->addComponent<CParent>(parent->id(), parent->tag(), parentTrans.pos, parentTrans.scale, parentTrans.angle);
+		parent->getComponent<CChildren>().children.push_back({ entity->id(), entity->tag() });
+		parent->getComponent<CChildren>().childEntities[entity->id()] = entity;
+	}
+}
+void Editor::SavePrefabData()
+{
+	nlohmann::json SceneCollection;
+
+	nlohmann::json globalField;
+	globalField["TOTAL"] = prefabManager.m_totalEntities;
+	globalField["DURATION"] = duration;
+	globalField["TRANSLATE_FACTOR"] = translateFactor;
+	globalField["SCALE_FACTOR"] = scaleFactor;
+	globalField["ROTATE_FACTOR"] = rotateFactor;
+
+	SceneCollection["STATISTICS"] += globalField;
+
+	for (auto& t : texturePathMap)
+	{
+		nlohmann::json textureField;
+		textureField["NAME"] = t.first;
+		textureField["PATH"] = t.second;
+		SceneCollection["TEXTURE"] += textureField;
+	}
+
+	for (auto& a : animationMap)
+	{
+		nlohmann::json animationField;
+		animationField["NAME"] = a.first;
+		animationField["TEXTURE"] = a.second.getTexName();
+		animationField["FRAMECOUNT"] = a.second.getFrameCount();
+		animationField["SPEED"] = a.second.getSpeed();
+		SceneCollection["ANIMATION"] += animationField;
+	}
+
+	for (auto& s : scriptManager.scriptsDirectoryMap)
+	{
+		if (scriptManager.hasEnvironment(s.first))
+		{
+			nlohmann::json scriptField;
+			scriptField["NAME"] = s.first + ".lua";
+			scriptField["DIRECTORY"] = s.second.string();
+			SceneCollection["SCRIPT"] += scriptField;
+		}
+	}
+
+	for (auto& e : prefabManager.getEntities())
+	{
+		if (e->hasComponent<CParent>()) continue;
+		nlohmann::json entityField;
+		entityField["ID"] = e->id();
+		entityField["TAG"] = e->tag();
+		entityField["PREFAB"] = { e->prefabData().first, e->prefabData().second };
+		if (e->hasComponent<CTransform>())
+		{
+			auto& trans = e->getComponent<CTransform>();
+			entityField["PX"] = trans.pos.x;
+			entityField["PY"] = trans.pos.y;
+			entityField["SX"] = trans.scale.x;
+			entityField["SY"] = trans.scale.y;
+			entityField["R"] = trans.angle;
+		}
+		if (e->hasComponent<CName>())
+		{
+			entityField["NAME"] = e->getComponent<CName>().name;
+		}
+		else {
+			entityField["NAME"] = "Unnamed";
+		}
+		if (e->hasComponent<CBoxRender>())
+		{
+			auto& boxRender = e->getComponent<CBoxRender>();
+			entityField["RENDER"] = "Rectangle";
+			entityField["FILLCOLOR"] = { boxRender.fillColor.r, boxRender.fillColor.g, boxRender.fillColor.b, boxRender.fillColor.a };
+			entityField["OUTLINECOLOR"] = { boxRender.outlineColor.r, boxRender.outlineColor.g, boxRender.outlineColor.b, boxRender.outlineColor.a };
+			entityField["THICKNESS"] = boxRender.outlineThickness;
+		}
+		else if (e->hasComponent<CCircleRender>())
+		{
+			auto& circleRender = e->getComponent<CCircleRender>();
+			entityField["RENDER"] = "Circle";
+			entityField["POINTCOUNT"] = circleRender.pointCount;
+			entityField["FILLCOLOR"] = { circleRender.fillColor.r, circleRender.fillColor.g, circleRender.fillColor.b, circleRender.fillColor.a };
+			entityField["OUTLINECOLOR"] = { circleRender.outlineColor.r, circleRender.outlineColor.g, circleRender.outlineColor.b, circleRender.outlineColor.a };
+			entityField["THICKNESS"] = circleRender.outlineThickness;
+		}
+		else if (e->hasComponent<CAnimation>())
+		{
+			auto& animComponent = e->getComponent<CAnimation>();
+			entityField["RENDER"] = animComponent.animation.getName();
+			entityField["REPEAT"] = animComponent.repeat;
+			entityField["FILLCOLOR"] = { animComponent.fillColor.r, animComponent.fillColor.g, animComponent.fillColor.b, animComponent.fillColor.a };
+		}
+		else {
+			entityField["RENDER"] = "None";
+		}
+		if (e->hasComponent<CCamera>())
+		{
+			auto& cam = e->getComponent<CCamera>().camera;
+			entityField["CAMERACOLOR"] = { cam.getColor().r, cam.getColor().g, cam.getColor().b, cam.getColor().a };
+		}
+		if (e->hasComponent<CBoxCollider>())
+		{
+			auto& boxOff = e->getComponent<CBoxCollider>().offset;
+			entityField["BOXCOLLIDER"] = { boxOff.x, boxOff.y };
+		}
+		if (e->hasComponent<CCircleCollider>())
+		{
+			auto& circleOff = e->getComponent<CCircleCollider>().offset;
+			entityField["CIRCLECOLLIDER"] = circleOff;
+		}
+		if (e->hasAnyScriptable())
+		{
+			nlohmann::json scriptablesArray = nlohmann::json::array();
+
+			for (auto& s : e->getScriptables())
+			{
+				scriptablesArray.push_back(s.first);
+			}
+
+			entityField["SCRIPTABLES"] = scriptablesArray;
+		}
+
+		if (e->hasComponent<CChildren>())
+		{
+			entityField["HASCHILDREN"] = true;
+			SaveChildPrefabData(entityField, e);
+		}
+		else
+		{
+			entityField["HASCHILDREN"] = false;
+		}
+		SceneCollection["ENTITY"] += entityField;
+	}
+	
+	std::ofstream outFile("Prefab.json");
+	if (outFile.is_open())
+	{
+		outFile << SceneCollection.dump(4); // Pretty print with 4 spaces
+		outFile.close();
+	}
+	else
+	{
+		ConsoleText("Failed to open file for writing");
+	}
+}
+void Editor::LoadPrefabData()
+{
+	nlohmann::json SceneCollection;
+
+	// Open and read the JSON file
+	std::ifstream inFile("Prefab.json");
+	if (inFile.is_open())
+	{
+		inFile >> SceneCollection;
+		inFile.close();
+	}
+	else
+	{
+		ConsoleText("Failed to open file for reading");
+		return;
+	}
+
+	if (SceneCollection.contains("STATISTICS"))
+	{
+		auto globalRecord = SceneCollection["STATISTICS"];
+		if (!globalRecord.empty())
+		{
+			prefabManager.m_totalEntities = globalRecord[0]["TOTAL"].get<size_t>();
+			duration = globalRecord[0]["DURATION"].get<float>();
+			translateFactor = globalRecord[0]["TRANSLATE_FACTOR"].get<float>();
+			scaleFactor = globalRecord[0]["SCALE_FACTOR"].get<float>();
+			rotateFactor = globalRecord[0]["ROTATE_FACTOR"].get<float>();
+		}
+	}
+	
+	if (SceneCollection.contains("TEXTURE"))
+	{
+		//std::cout << SceneCollection["TEXTURE"][0] << std::endl;
+		for (const auto& textureField : SceneCollection["TEXTURE"])
+		{
+			std::string name = textureField["NAME"].get<std::string>();
+			std::string path = textureField["PATH"].get<std::string>();
+			texturePathMap[name] = path;
+			sf::Texture texture;
+			texture.loadFromFile(path);
+			textureMap[name] = texture; // Load or process texture as needed
+		}
+	}
+
+	if (SceneCollection.contains("ANIMATION"))
+	{
+		//std::cout << SceneCollection["ANIMATION"][0] << std::endl;
+		for (const auto& animationField : SceneCollection["ANIMATION"])
+		{
+			std::string name = animationField["NAME"].get<std::string>();
+			if (name == "default_rectangle" || name == "default_circle")
+			{
+				animationMap[name] = Animation();
+			}
+			else
+			{
+				std::string texName = animationField["TEXTURE"].get<std::string>();
+				int framecount = animationField["FRAMECOUNT"].get<int>();
+				int speed = animationField["SPEED"].get<int>();
+				Animation anim(name, texName, textureMap[texName], framecount, speed);
+				animationMap[name] = anim;
+			}
+		}
+	}
+
+	if (SceneCollection.contains("SCRIPT"))
+	{
+		for (const auto& scriptField : SceneCollection["SCRIPT"])
+		{
+			std::string filename = scriptField["NAME"].get<std::string>();
+			std::string directoryName = scriptField["DIRECTORY"].get<std::string>();
+			fs::path directory(directoryName);
+			scriptManager.LoadScript(*this, filename, directory);
+		}
+	}
+
+	if (SceneCollection.contains("ENTITY"))
+	{
+		for (const auto& entityField : SceneCollection["ENTITY"])
+		{
+			size_t id = entityField["ID"].get<size_t>();
+			auto entity = prefabManager.addEntity(entityField["TAG"].get<std::string>(), id);
+			entity->setPrefab(true);
+
+			if (entityField.contains("PREFAB"))
+			{
+				auto prefabData = entityField["PREFAB"];
+				entity->m_prefabID = { prefabData[0].get<bool>(), prefabData[1].get<size_t>() };
+			}
+			entity->addComponent<CName>(entityField["NAME"].get<std::string>());
+			Vec2 pos(entityField["PX"].get<float>(), entityField["PY"].get<float>());
+			Vec2 scale(entityField["SX"].get<float>(), entityField["SY"].get<float>());
+			float angle = entityField["R"].get<float>();
+			entity->addComponent<CTransform>(pos, scale, angle);
+			entity->addComponent<CSize>();
+			std::string renderName = entityField["RENDER"].get<std::string>();
+			if (renderName == "Rectangle")
+			{
+				auto& BoxRender = entity->addComponent<CBoxRender>();
+				BoxRender.outlineThickness = entityField["THICKNESS"].get<float>();
+				auto fillColorArray = entityField["FILLCOLOR"];
+				BoxRender.fillColor = sf::Color(
+					fillColorArray[0].get<uint8_t>(),
+					fillColorArray[1].get<uint8_t>(),
+					fillColorArray[2].get<uint8_t>(),
+					fillColorArray[3].get<uint8_t>()
+				);
+
+				// Load outline color for Rectangle
+				auto outlineColorArray = entityField["OUTLINECOLOR"];
+				BoxRender.outlineColor = sf::Color(
+					outlineColorArray[0].get<uint8_t>(),
+					outlineColorArray[1].get<uint8_t>(),
+					outlineColorArray[2].get<uint8_t>(),
+					outlineColorArray[3].get<uint8_t>()
+				);
+			}
+			if (renderName == "Circle")
+			{
+				auto& CircleRender = entity->addComponent<CCircleRender>();
+				CircleRender.outlineThickness = entityField["THICKNESS"].get<float>();
+				CircleRender.pointCount = entityField["POINTCOUNT"].get<size_t>();
+				auto fillColorArray = entityField["FILLCOLOR"];
+				CircleRender.fillColor = sf::Color(
+					fillColorArray[0].get<uint8_t>(),
+					fillColorArray[1].get<uint8_t>(),
+					fillColorArray[2].get<uint8_t>(),
+					fillColorArray[3].get<uint8_t>()
+				);
+
+				// Load outline color for Circle
+				auto outlineColorArray = entityField["OUTLINECOLOR"];
+				CircleRender.outlineColor = sf::Color(
+					outlineColorArray[0].get<uint8_t>(),
+					outlineColorArray[1].get<uint8_t>(),
+					outlineColorArray[2].get<uint8_t>(),
+					outlineColorArray[3].get<uint8_t>()
+				);
+			}
+			if (renderName != "Circle" && renderName != "Rectangle")
+			{
+				if (renderName != "None")
+				{
+					auto& Anim = entity->addComponent<CAnimation>(animationMap[renderName]);
+					Anim.repeat = entityField["REPEAT"].get<bool>();
+					auto fillColorArray = entityField["FILLCOLOR"];
+					Anim.fillColor = sf::Color(
+						fillColorArray[0].get<uint8_t>(),
+						fillColorArray[1].get<uint8_t>(),
+						fillColorArray[2].get<uint8_t>(),
+						fillColorArray[3].get<uint8_t>()
+					);
+				}
+			}
+			if (entityField.contains("CAMERACOLOR"))
+			{
+				auto fillColorArray = entityField["CAMERACOLOR"];
+				entity->addComponent<CCamera>().camera.setColor(
+					fillColorArray[0].get<uint8_t>(),
+					fillColorArray[1].get<uint8_t>(),
+					fillColorArray[2].get<uint8_t>(),
+					fillColorArray[3].get<uint8_t>()
+				);
+			}
+			if (entityField.contains("BOXCOLLIDER"))
+			{
+				auto boxOff = entityField["BOXCOLLIDER"];
+				entity->addComponent<CBoxCollider>();
+				entity->getComponent<CBoxCollider>().offset = Vec2(boxOff[0].get<float>(), boxOff[1].get<float>());
+			}
+			if (entityField.contains("CIRCLECOLLIDER"))
+			{
+				auto circleOff = entityField["CIRCLECOLLIDER"];
+				entity->addComponent<CCircleCollider>();
+				entity->getComponent<CCircleCollider>().offset = circleOff.get<float>();
+			}
+			if (entityField.contains("SCRIPTABLES"))
+			{
+				for (const auto& scriptName : entityField["SCRIPTABLES"])
+				{
+					std::string script = scriptName.get<std::string>();
+					entity->addScriptable(script);
+				}
+			}
+			if (entityField["HASCHILDREN"].get<bool>())
+			{
+				entity->addComponent<CChildren>();
+				LoadChildPrefabData(entityField["ENTITY"], entity);
+			}
+		}
+	}
 }
 
 void Editor::StartGame()

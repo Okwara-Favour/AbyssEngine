@@ -6,7 +6,9 @@
 
 ScriptManager::ScriptManager()
 {
-	lua.open_libraries(sol::lib::base, sol::lib::package);
+	lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::coroutine,
+		sol::lib::string, sol::lib::table, sol::lib::math,
+		sol::lib::io, sol::lib::os, sol::lib::debug, sol::lib::utf8);
 
 	lua["require"] = [this](const std::string& name) {
 		auto it = scriptsMap.find(name); // Adjust if needed
@@ -339,6 +341,20 @@ void ScriptManager::UpdateSOL()
 	{
 		allSOL.erase(t);
 	}
+}
+
+void ScriptManager::ResetClass()
+{
+	for (auto& s : allSOL)
+	{
+		for (auto& sc : s.second)
+		{
+			if (sc.scriptClass) (sc.scriptClass).reset();
+			if (sc.instance) (sc.instance).reset();
+		}
+	}
+	allSOL.clear();
+	lua.collect_garbage();
 }
 
 void ScriptManager::Close()

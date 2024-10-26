@@ -25,11 +25,21 @@ void EngineSettings::Update(Editor& editor)
                         }
                         if (item == "Save")
                         {
-                            editor.SaveScene();
+                            if (editor.saveFile == "") 
+                            {
+                                MakeFile(editor);
+                            }
+                            if (editor.saveFile != "")
+                            {
+                                editor.SaveScene();
+                                editor.SavePrefabData();
+                            }
+                            
                         }
                         if (item == "Load")
                         {
-                            editor.load = true;
+                            LoadFile(editor);
+                            if(editor.saveFile != "") editor.load = true;
                         }
                     }
                 }
@@ -78,6 +88,21 @@ void EngineSettings::Update(Editor& editor)
                         {
                             if (editor.selectedEntity) editor.parentEntity = editor.selectedEntity;
                         }
+                        if (item == "Make Prefab")
+                        {
+                            if (editor.selectedEntity) editor.entityManager.MakePrefab(editor.prefabManager, editor.selectedEntity);
+                        }
+                        if (item == "Restore Entity")
+                        {
+                            if (editor.selectedPrefab) 
+                            {
+                                editor.entityManager.MakePrefab(editor.entityManager, editor.selectedPrefab, true);
+                            }
+                        }
+                        if (item == "Update Prefab")
+                        {
+                            editor.entityManager.UpdatePrefab(editor.prefabManager, editor.selectedEntity);
+                        }
                         if (item == "Remove")
                         {
                             if (editor.selectedEntity)
@@ -89,6 +114,12 @@ void EngineSettings::Update(Editor& editor)
                                 }
                                 DeleteEntity(editor, editor.selectedEntity);
                                 editor.selectedEntity = nullptr;
+                            }
+                            if (editor.selectedPrefab)
+                            {
+                                editor.Save();
+                                editor.prefabManager.DeleteEntity(editor.selectedPrefab);
+                                editor.selectedPrefab = nullptr;
                             }
                         }
                     }
@@ -170,6 +201,84 @@ void EngineSettings::createEntity(Editor& editor, const std::string& type)
     }
 }
 
+void EngineSettings::LoadFile(Editor& editor)
+{
+    nfdchar_t* outPath = nullptr;
+    nfdresult_t result = NFD_OpenDialog(nullptr, nullptr, &outPath); // Open a dialog to choose a file
+    std::stringstream iss;
+    if (result == NFD_OKAY) // If the user selected a file
+    {
+        iss << "User selected file: " << outPath;
+        editor.ConsoleText(iss.str());
+        
+        fs::path sourceFile(outPath);
+        if (sourceFile.extension().string() == ".json") editor.saveFile = sourceFile.string();
+        else editor.ConsoleText("Invalid Scene File");
+        iss.str("");
+    }
+    else if (result == NFD_CANCEL) // If the user canceled the file selection
+    {
+        editor.ConsoleText("User canceled the operation.");
+    }
+    else // If there was an error
+    {
+        iss << "Error: " << NFD_GetError();
+        editor.ConsoleText(iss.str());
+        iss.str("");
+    }
+    // Free the memory allocated by nfd
+    if (outPath)
+    {
+        free(outPath);
+    }
+}
+
+void EngineSettings::MakeFile(Editor& editor)
+{
+    nfdchar_t* outPath = nullptr;
+    nfdresult_t result = NFD_PickFolder(nullptr, &outPath); // Select Folder
+    std::stringstream iss;
+    if (result == NFD_OKAY) // If the user selected a folder
+    {
+        fs::path directory(outPath);
+        if (fs::is_directory(directory))
+        {
+            fs::path jsonFile = directory / "New_Scene.json";
+            std::ofstream file(jsonFile);
+            if (file.is_open())
+            {
+                file.close();
+
+                editor.ConsoleText("File created: " + jsonFile.string());
+                editor.saveFile = jsonFile.string(); // Save the file path
+            }
+            else
+            {
+                editor.ConsoleText("Failed to create file: " + jsonFile.string());
+            }
+        }
+        else
+        {
+            editor.ConsoleText("Invalid directory " + directory.string());
+        }
+    }
+    else if (result == NFD_CANCEL) // If the user canceled the file selection
+    {
+        editor.ConsoleText("User canceled the operation.");
+    }
+    else // If there was an error
+    {
+        iss << "Error: " << NFD_GetError();
+        editor.ConsoleText(iss.str());
+        iss.str("");
+    }
+    // Free the memory allocated by nfd
+    if (outPath)
+    {
+        free(outPath);
+    }
+}
+
 void EngineSettings::ImportFiles(Editor& editor)
 {
     nfdchar_t* outPath = nullptr;
@@ -229,7 +338,6 @@ void EngineSettings::ChangeParent(Editor& editor, std::shared_ptr<Entity>& entit
     entity->addComponent<CParent>(parent->id(), parent->tag(), parentTrans.pos, parentTrans.scale, parentTrans.angle);
     if (!parent->hasComponent<CChildren>()) { parent->addComponent<CChildren>(); }
     parent->getComponent<CChildren>().children.push_back({ entity->id(), entity->tag() });
-    parent->getComponent<CChildren>().childEntities[entity->id()] = editor.entityManager.MakeEntityCopy(entity);
 }
 
 void EngineSettings::MakeIndependent(Editor& editor, const std::shared_ptr<Entity>& entity)

@@ -10,7 +10,7 @@ void Display::Init(Editor& editor)
 	keyAction[ImGuiKey_LeftArrow] = "MOVELEFT";
 	keyAction[ImGuiKey_RightArrow] = "MOVERIGHT";
 	mainViewPort = editor.window.getDefaultView();
-	std::cout << mainViewPort.getSize().x << " " << mainViewPort.getSize().y << std::endl;
+	//std::cout << mainViewPort.getSize().x << " " << mainViewPort.getSize().y << std::endl;
 }
 void Display::Update(Editor& editor)
 {
@@ -85,6 +85,7 @@ void Display::Update(Editor& editor)
 	{
 		editor.Save();
 		editor.selectedEntity = nullptr;
+		editor.selectedPrefab = nullptr;
 	}
 	//std::cout << texSize.x << " " << texSize.y << std::endl;
 	entityClicked = false;

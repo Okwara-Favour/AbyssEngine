@@ -62,7 +62,7 @@ CCircleRender::CCircleRender(sf::CircleShape& cir)
 
 void CCircleRender::Lua(sol::state& lua)
 {
-	lua.new_usertype<CCircleRender>("CCirlceShape",
+	lua.new_usertype<CCircleRender>("CCircleShape",
 		sol::constructors<CCircleRender(), CCircleRender(sf::CircleShape&)>(),
 		"circle", &CCircleRender::circle,
 		"fillColor", &CCircleRender::fillColor,

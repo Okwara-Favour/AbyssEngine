@@ -1,32 +1,29 @@
 PlayerShoot = {}
 PlayerShoot.__index = PlayerShoot
 
-ShootRate = 10
+--ShootRate = 100
 
 function PlayerShoot:Start()
     local self = setmetatable({}, PlayerShoot)
-    self.bullet = EManager:Copy(EManager:getEntityName("Bullet"))
-    self.shootCountDown = ShootRate
+    self.bullet = GetPrefabByName("BulletA")
+    --self.shootCountDown = ShootRate
     self.canShoot = true
     return self
 end
 
 function PlayerShoot:Update()
-    if Listener:IsKeyPressed("Numpad0") and self.canShoot then
+    if Listener:IsKeyPressed("M") and self.canShoot then
         self.canShoot = false
         if(self.bullet) then
             playerPos = self.entity:getTransform().pos;
-            self.bullet:getTransform().pos = playerPos;
             bullet = EManager:Instantiate(self.bullet)
+            bullet:getTransform().pos = playerPos;
         end
     end
 
-    if self.shootCountDown < 0 then
+    if Listener:IsKeyReleased("M") and not self.canShoot then
         self.canShoot = true
-        self.shootCountDown = ShootRate
     end
-
-    self.shootCountDown = self.shootCountDown - 1
     return self
 end
 

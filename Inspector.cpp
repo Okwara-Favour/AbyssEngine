@@ -20,36 +20,69 @@ void Inspector::Update(Editor& editor)
             ImGui::Text("Parent: %d", editor.selectedEntity->getComponent<CParent>().id);
             ImGui::Separator();
         }
-        handleTags(editor);
-        displayComponents(editor);
-        handleComponents(editor);
+        if (editor.selectedEntity->prefabData().first)
+        {
+            ImGui::Text("Prefab-Link: %d", editor.selectedEntity->prefabData().second);
+            ImGui::Separator();
+        }
+        handleTags(editor, editor.selectedEntity);
+        displayComponents(editor, editor.selectedEntity);
+        handleComponents(editor, editor.selectedEntity);
 	}
+    if (editor.selectedPrefab && !editor.selectedEntity)
+    {
+        ImGui::Text("ID: %d", editor.selectedPrefab->id());
+        ImGui::Separator();
+        if (editor.selectedPrefab->hasComponent<CParent>())
+        {
+            ImGui::Text("Parent: %d", editor.selectedPrefab->getComponent<CParent>().id);
+            ImGui::Separator();
+        }
+        if (editor.selectedPrefab->prefabData().first)
+        {
+            ImGui::Text("Prefab-Link: %d", editor.selectedPrefab->prefabData().second);
+            ImGui::Separator();
+        }
+        handleTags(editor, editor.selectedPrefab);
+        displayComponents(editor, editor.selectedPrefab);
+        handleComponents(editor, editor.selectedPrefab);
+    }
     ImGui::PopItemWidth();
 	ImGui::End();
 
-    if (ImGui::IsKeyPressed(ImGuiKey_E))
+    if (ImGui::IsKeyPressed(ImGuiKey_F))
     {
         editor.ConsoleText(std::to_string(editor.animationMap.size()));
-        /*
-        * for (auto& e : textureMap)
+        
+        if (editor.selectedPrefab)
         {
-            editor.ConsoleText(e.first);
+            if (editor.selectedPrefab->hasComponent<CChildren>())
+            {
+                editor.ConsoleText("Yes");
+                for (auto& e : editor.selectedPrefab->getComponent<CChildren>().childEntities)
+                {
+                    auto child = std::any_cast<std::shared_ptr<Entity>>(e.second);
+                    editor.ConsoleText(child->getComponent<CName>().name);
+                }
+            }
+            
         }
-        */
+        
+        
     }
 }
 
-void Inspector::handleTags(Editor& editor)
+void Inspector::handleTags(Editor& editor, std::shared_ptr<Entity>& selected)
 {
-    if (ImGui::BeginCombo("Tag", editor.selectedEntity->tag().c_str()))
+    if (ImGui::BeginCombo("Tag", selected->tag().c_str()))
     {
         for (const auto& tag : Tags)
         {
             if (ImGui::Selectable(tag.c_str()))
             {
-                if (editor.selectedEntity->tag() != tag) {
+                if (selected->tag() != tag) {
                     editor.Save();
-                    editor.entityManager.changeTag(editor.selectedEntity, tag);
+                    editor.entityManager.changeTag(selected, tag);
                 }
             }
         }
@@ -57,7 +90,7 @@ void Inspector::handleTags(Editor& editor)
     }
 }
 
-void Inspector::handleComponents(Editor& editor)
+void Inspector::handleComponents(Editor& editor, std::shared_ptr<Entity>& selected)
 {
     ImGui::PushItemWidth(25);
     if (ImGui::BeginCombo("Add Component", " "))
@@ -69,29 +102,29 @@ void Inspector::handleComponents(Editor& editor)
                 if (component == "Renderer")
                 {
                     editor.Save();
-                    editor.selectedEntity->addComponent<CBoxRender>();
+                    selected->addComponent<CBoxRender>();
                 }
                 if (component == "BoxCollider")
                 {
                     editor.Save();
-                    auto& size = editor.selectedEntity->getComponent<CSize>().size;
-                    editor.selectedEntity->addComponent<CBoxCollider>(size.x, size.y);
+                    auto& size = selected->getComponent<CSize>().size;
+                    selected->addComponent<CBoxCollider>(size.x, size.y);
                 }
                 if (component == "CircleCollider")
                 {
                     editor.Save();
-                    auto& size = editor.selectedEntity->getComponent<CSize>().size;
+                    auto& size = selected->getComponent<CSize>().size;
                     float diameter = size.length();
-                    if (editor.selectedEntity->hasComponent<CCircleRender>())
+                    if (selected->hasComponent<CCircleRender>())
                     {
                         diameter = std::max(size.x, size.y);
                     }
-                    editor.selectedEntity->addComponent<CCircleCollider>(diameter/2);
+                    selected->addComponent<CCircleCollider>(diameter / 2);
                 }
                 if (component == "Camera")
                 {
                     editor.Save();
-                    editor.selectedEntity->addComponent<CCamera>();
+                    selected->addComponent<CCamera>();
                 }
             }
         }
@@ -100,7 +133,7 @@ void Inspector::handleComponents(Editor& editor)
             if (ImGui::Selectable(scriptName.c_str()))
             {
                 editor.Save();
-                editor.selectedEntity->addScriptable(Scriptable(scriptName));
+                selected->addScriptable(Scriptable(scriptName));
             }
         }
         ImGui::EndCombo();
@@ -116,24 +149,24 @@ void Inspector::handleComponents(Editor& editor)
                 if (component == "Renderer")
                 {
                     editor.Save();
-                    if (editor.selectedEntity->hasComponent<CBoxRender>()) editor.selectedEntity->removeComponent<CBoxRender>();
-                    if (editor.selectedEntity->hasComponent<CCircleRender>())editor.selectedEntity->removeComponent<CCircleRender>();
-                    if (editor.selectedEntity->hasComponent<CAnimation>())editor.selectedEntity->removeComponent<CAnimation>();
+                    if (selected->hasComponent<CBoxRender>()) selected->removeComponent<CBoxRender>();
+                    if (selected->hasComponent<CCircleRender>())selected->removeComponent<CCircleRender>();
+                    if (selected->hasComponent<CAnimation>())selected->removeComponent<CAnimation>();
                 }
                 if (component == "BoxCollider")
                 {
                     editor.Save();
-                    editor.selectedEntity->removeComponent<CBoxCollider>();
+                    selected->removeComponent<CBoxCollider>();
                 }
                 if (component == "CircleCollider")
                 {
                     editor.Save();
-                    editor.selectedEntity->removeComponent<CCircleCollider>();
+                    selected->removeComponent<CCircleCollider>();
                 }
                 if (component == "Camera")
                 {
                     editor.Save();
-                    editor.selectedEntity->removeComponent<CCamera>();
+                    selected->removeComponent<CCamera>();
                 }
             }
         }
@@ -143,7 +176,7 @@ void Inspector::handleComponents(Editor& editor)
             if (ImGui::Selectable(scriptName.c_str()))
             {
                 editor.Save();
-                editor.selectedEntity->removeScriptable(scriptName);
+                selected->removeScriptable(scriptName);
             }
         }
         ImGui::EndCombo();
@@ -151,15 +184,15 @@ void Inspector::handleComponents(Editor& editor)
     ImGui::PopItemWidth();
 }
 
-void Inspector::displayComponents(Editor& editor)
+void Inspector::displayComponents(Editor& editor, std::shared_ptr<Entity>& selected)
 {
-    if (editor.selectedEntity->hasComponent<CTransform>())
+    if (selected->hasComponent<CTransform>())
     {
-        auto& trans = editor.selectedEntity->getComponent<CTransform>();
+        auto& trans = selected->getComponent<CTransform>();
 
         if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            auto& trans = editor.selectedEntity->getComponent<CTransform>();
+            auto& trans = selected->getComponent<CTransform>();
             ImGui::Text("Position");
             ImGui::InputFloat("PX", &trans.pos.x);
             ImGui::SameLine();
@@ -176,18 +209,18 @@ void Inspector::displayComponents(Editor& editor)
         }
     }
 
-    if (editor.selectedEntity->hasComponent<CBoxRender>() || editor.selectedEntity->hasComponent<CCircleRender>()
-        || editor.selectedEntity->hasComponent<CAnimation>())
+    if (selected->hasComponent<CBoxRender>() || selected->hasComponent<CCircleRender>()
+        || selected->hasComponent<CAnimation>())
     {
         if (ImGui::CollapsingHeader("Renderer", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::Text("Nothing to see here yet");
             std::string modelName = "None";
-            if (editor.selectedEntity)
+            if (selected)
             {
-                if (editor.selectedEntity->hasComponent<CBoxRender>()) modelName = "default_rectangle";
-                if (editor.selectedEntity->hasComponent<CCircleRender>()) modelName = "default_circle";
-                if (editor.selectedEntity->hasComponent<CAnimation>()) modelName = editor.selectedEntity->getComponent<CAnimation>().animation.getName();
+                if (selected->hasComponent<CBoxRender>()) modelName = "default_rectangle";
+                if (selected->hasComponent<CCircleRender>()) modelName = "default_circle";
+                if (selected->hasComponent<CAnimation>()) modelName = selected->getComponent<CAnimation>().animation.getName();
             }
             if (ImGui::BeginCombo("Model", modelName.c_str()))
             {
@@ -198,36 +231,36 @@ void Inspector::displayComponents(Editor& editor)
                     {
                         if (model.first == "default_rectangle")
                         {
-                            if (modelName != "default_rectangle") editor.Save(), editor.selectedEntity->addComponent<CBoxRender>();
-                            if (modelName == "default_circle")  editor.selectedEntity->removeComponent<CCircleRender>();
-                            if (modelName != "default_circle" && modelName != "default_rectangle") editor.selectedEntity->removeComponent<CAnimation>();
+                            if (modelName != "default_rectangle") editor.Save(), selected->addComponent<CBoxRender>();
+                            if (modelName == "default_circle")  selected->removeComponent<CCircleRender>();
+                            if (modelName != "default_circle" && modelName != "default_rectangle") selected->removeComponent<CAnimation>();
                         }
                         else if (model.first == "default_circle")
                         {
-                            if (modelName != "default_circle") editor.Save(), editor.selectedEntity->addComponent<CCircleRender>();
-                            if (modelName == "default_rectangle") editor.selectedEntity->removeComponent<CBoxRender>();
-                            if (modelName != "default_circle" && modelName != "default_rectangle") editor.selectedEntity->removeComponent<CAnimation>();
+                            if (modelName != "default_circle") editor.Save(), selected->addComponent<CCircleRender>();
+                            if (modelName == "default_rectangle") selected->removeComponent<CBoxRender>();
+                            if (modelName != "default_circle" && modelName != "default_rectangle") selected->removeComponent<CAnimation>();
                         }
                         else
                         {
-                            if (modelName != model.second.getName()) editor.Save(), editor.selectedEntity->addComponent<CAnimation>(model.second);
-                            if (modelName == "default_rectangle") editor.selectedEntity->removeComponent<CBoxRender>();
-                            if (modelName == "default_circle") editor.selectedEntity->removeComponent<CCircleRender>();
+                            if (modelName != model.second.getName()) editor.Save(), selected->addComponent<CAnimation>(model.second);
+                            if (modelName == "default_rectangle") selected->removeComponent<CBoxRender>();
+                            if (modelName == "default_circle") selected->removeComponent<CCircleRender>();
                         }
                     }
                 }
                 ImGui::EndCombo();
             }
             ImGui::Separator();
-            bool hasBox = editor.selectedEntity->hasComponent<CBoxRender>();
-            bool hasCircle = editor.selectedEntity->hasComponent<CCircleRender>();
-            bool hasAnim = editor.selectedEntity->hasComponent<CAnimation>();
+            bool hasBox = selected->hasComponent<CBoxRender>();
+            bool hasCircle = selected->hasComponent<CCircleRender>();
+            bool hasAnim = selected->hasComponent<CAnimation>();
 
             ImGui::PushItemWidth(200);
 
-            auto& ShapeColor =  hasBox ? editor.selectedEntity->getComponent<CBoxRender>().fillColor :
-                                hasCircle ? editor.selectedEntity->getComponent<CCircleRender>().fillColor :
-                                editor.selectedEntity->getComponent<CAnimation>().fillColor;
+            auto& ShapeColor = hasBox ? selected->getComponent<CBoxRender>().fillColor :
+                hasCircle ? selected->getComponent<CCircleRender>().fillColor :
+                selected->getComponent<CAnimation>().fillColor;
 
             // Convert sf::Color to a float array (normalized [0, 1] for ImGui)
             float color[4] = {
@@ -251,8 +284,8 @@ void Inspector::displayComponents(Editor& editor)
             ImGui::Separator();
             if (hasBox || hasCircle)
             {
-                auto& ShapeOutlineColor = hasBox ? editor.selectedEntity->getComponent<CBoxRender>().outlineColor :
-                    editor.selectedEntity->getComponent<CCircleRender>().outlineColor;
+                auto& ShapeOutlineColor = hasBox ? selected->getComponent<CBoxRender>().outlineColor :
+                    selected->getComponent<CCircleRender>().outlineColor;
 
                 float outlineColor[4] = {
                     ShapeOutlineColor.r / 255.0f,
@@ -274,15 +307,15 @@ void Inspector::displayComponents(Editor& editor)
                 }
 
                 ImGui::Separator();
-                auto& OutlineThickness = hasBox ? editor.selectedEntity->getComponent<CBoxRender>().outlineThickness :
-                    editor.selectedEntity->getComponent<CCircleRender>().outlineThickness;
+                auto& OutlineThickness = hasBox ? selected->getComponent<CBoxRender>().outlineThickness :
+                    selected->getComponent<CCircleRender>().outlineThickness;
                 //ImGui::InputScalar("Thickness", ImGuiDataType_U64, &OutlineThickness);
                 ImGui::InputFloat("Thickness", &OutlineThickness);
                 ImGui::Separator();
             }
             if (hasCircle)
             {
-                auto& PointCount = editor.selectedEntity->getComponent<CCircleRender>().pointCount;
+                auto& PointCount = selected->getComponent<CCircleRender>().pointCount;
                 ImGui::InputScalar("Points", ImGuiDataType_U64, &PointCount);
                 ImGui::Separator();
             }
@@ -290,14 +323,14 @@ void Inspector::displayComponents(Editor& editor)
         }
     }
 
-    if (editor.selectedEntity->hasComponent<CCamera>())
+    if (selected->hasComponent<CCamera>())
     {
-        auto& circle = editor.selectedEntity->getComponent<CCamera>();
+        auto& circle = selected->getComponent<CCamera>();
 
         if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::PushItemWidth(200);
-            auto& Cam = editor.selectedEntity->getComponent<CCamera>().camera;
+            auto& Cam = selected->getComponent<CCamera>().camera;
             auto& SceneColor = Cam.getColor();
 
             // Convert sf::Color to a float array (normalized [0, 1] for ImGui)
@@ -323,9 +356,9 @@ void Inspector::displayComponents(Editor& editor)
         }
     }
 
-    if (editor.selectedEntity->hasComponent<CBoxCollider>())
+    if (selected->hasComponent<CBoxCollider>())
     {
-        auto& box = editor.selectedEntity->getComponent<CBoxCollider>();
+        auto& box = selected->getComponent<CBoxCollider>();
 
         if (ImGui::CollapsingHeader("Box Collider", ImGuiTreeNodeFlags_DefaultOpen))
         {
@@ -340,9 +373,9 @@ void Inspector::displayComponents(Editor& editor)
         }
     }
 
-    if (editor.selectedEntity->hasComponent<CCircleCollider>())
+    if (selected->hasComponent<CCircleCollider>())
     {
-        auto& circle = editor.selectedEntity->getComponent<CCircleCollider>();
+        auto& circle = selected->getComponent<CCircleCollider>();
 
         if (ImGui::CollapsingHeader("Circle Collider", ImGuiTreeNodeFlags_DefaultOpen))
         {
@@ -353,9 +386,9 @@ void Inspector::displayComponents(Editor& editor)
         }
     }
 
-    if (editor.selectedEntity->hasAnyScriptable())
+    if (selected->hasAnyScriptable())
     {
-        for (auto& script : editor.selectedEntity->m_scriptables)
+        for (auto& script : selected->m_scriptables)
         {
             if (editor.scriptManager.hasEnvironment(script.first))
             {

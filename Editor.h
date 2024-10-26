@@ -73,6 +73,7 @@ protected:
 	ScriptManager scriptManager;
 	std::shared_ptr<Entity> parentEntity = nullptr;
 	fs::path currentDirectory = fs::current_path();
+	std::string saveFile = "";
 	std::map<std::string, std::string> texturePathMap;
 	std::map<std::string, sf::Texture> textureMap;
 	std::map<std::string, Animation> animationMap;
@@ -86,7 +87,9 @@ public:
 	bool					gameMode = false;
 	ImVec2					startPosition;
 	std::shared_ptr<Entity> selectedEntity = nullptr;
+	std::shared_ptr<Entity> selectedPrefab = nullptr;
 	EntityManager			entityManager;
+	EntityManager			prefabManager;
 	PhysicsManager			physicsManager;
 	EventListener			eventListener;
 	Editor();
@@ -106,6 +109,10 @@ public:
 	void LoadChildEntitiesFromSceneFile(const nlohmann::json& dict, const std::shared_ptr<Entity> parent);
 	void SaveScene();
 	void LoadScene();
+	void SaveChildPrefabData(nlohmann::json& dict, const std::shared_ptr<Entity> parent);
+	void LoadChildPrefabData(const nlohmann::json& dict, const std::shared_ptr<Entity> parent);
+	void SavePrefabData();
+	void LoadPrefabData();
 	void CloseEditor();
 	void ToggleFullScreen();
 	void StartGame();

@@ -45,9 +45,8 @@ std::shared_ptr<Entity> EntityManager::getEntityName(const std::string& name)
 std::shared_ptr<Entity> EntityManager::MakeEntityCopy(const std::shared_ptr<Entity>& entity)
 {
 	if (!entity) return nullptr;
-	std::shared_ptr<Entity> copyEntity = std::shared_ptr<Entity>(new Entity(m_totalEntities, entity->tag()));
+	std::shared_ptr<Entity> copyEntity = std::shared_ptr<Entity>(new Entity(entity->id(), entity->tag()));
 	copyEntity->m_active = entity->m_active;
-	copyEntity->m_dead = entity->m_dead;
 	copyEntity->m_components = entity->m_components;
 
 	for (auto& sc : entity->m_scriptables)
@@ -55,23 +54,26 @@ std::shared_ptr<Entity> EntityManager::MakeEntityCopy(const std::shared_ptr<Enti
 		Scriptable newSc;
 		newSc.name = sc.second.name;
 		newSc.hasMapped = std::make_shared<bool>(*sc.second.hasMapped);
-		newSc.destroy = std::make_shared<bool>(*sc.second.destroy);
 		newSc.variableMap = sc.second.variableMap;
 		copyEntity->addScriptable(newSc);
+	}
+
+	if (entity->hasComponent<CChildren>())
+	{
+		auto& Children = entity->getComponent<CChildren>();
+		copyEntity->addComponent<CChildren>();
+		auto& childEntities = copyEntity->getComponent<CChildren>().childEntities;
+		for (auto& e : Children.children)
+		{
+			auto& child = getEntity(e.first);
+			childEntities[child->id()] = std::make_any<std::shared_ptr<Entity>>(MakeEntityCopy(child));
+		}
 	}
 	return copyEntity;
 }
 
-
-std::shared_ptr<Entity> EntityManager::Instantiate(const std::shared_ptr<Entity>& entity)
+void EntityManager::instantiate(const std::shared_ptr<Entity>& entity, std::shared_ptr<Entity>& copyEntity)
 {
-	if (!entity) return nullptr;
-
-	std::shared_ptr<Entity> copyEntity = std::shared_ptr<Entity>(new Entity(m_totalEntities++, entity->tag()));
-	copyEntity->m_active = entity->m_active;
-	copyEntity->m_dead = entity->m_dead;
-	copyEntity->m_components = entity->m_components;
-
 	std::string newName = "(copy" + std::to_string(copyEntity->id()) + ")";
 	if (copyEntity->hasComponent<CName>())
 	{
@@ -85,10 +87,10 @@ std::shared_ptr<Entity> EntityManager::Instantiate(const std::shared_ptr<Entity>
 		Scriptable newSc;
 		newSc.name = sc.second.name;
 		newSc.hasMapped = std::make_shared<bool>(*sc.second.hasMapped);
-		newSc.destroy = std::make_shared<bool>(*sc.second.destroy);
 		newSc.variableMap = sc.second.variableMap;
 		copyEntity->addScriptable(newSc);
 	}
+
 	m_toAdd.push_back(copyEntity);
 
 	if (entity->hasComponent<CChildren>())
@@ -98,55 +100,77 @@ std::shared_ptr<Entity> EntityManager::Instantiate(const std::shared_ptr<Entity>
 		for (auto& e : Children.childEntities)
 		{
 			auto childEntity = std::any_cast<std::shared_ptr<Entity>>(e.second);
+
 			auto child = Instantiate(childEntity);
 			auto& parentTrans = copyEntity->getComponent<CTransform>();
-			auto& prevChildData = child->getComponent<CParent>();
-			auto& childTrans = child->getComponent<CTransform>();
-			Vec2 diff = prevChildData.initialPosition - childTrans.pos;
-			child->getComponent<CTransform>().pos = parentTrans.pos + diff;
-			child->getComponent<CTransform>().angle = parentTrans.angle;
 			child->addComponent<CParent>(copyEntity->id(), copyEntity->tag(), parentTrans.pos, parentTrans.scale, parentTrans.angle);
 			copyEntity->getComponent<CChildren>().children.push_back({ child->id(), child->tag() });
-			copyEntity->getComponent<CChildren>().childEntities[child->id()] = MakeEntityCopy(child);
 		}
 	}
+}
+
+std::shared_ptr<Entity> EntityManager::InstantiatePrefab(const std::shared_ptr<Entity>& entity)
+{
+	if (!entity) return nullptr;
+
+	std::shared_ptr<Entity> copyEntity = std::shared_ptr<Entity>(new Entity(m_totalEntities++, entity->tag()));
+	copyEntity->m_active = entity->m_active;
+	copyEntity->m_components = entity->m_components;
+	copyEntity->m_prefab = false;
+
+	for (auto& sc : entity->m_scriptables)
+	{
+		Scriptable newSc;
+		newSc.name = sc.second.name;
+		newSc.hasMapped = std::make_shared<bool>(*sc.second.hasMapped);
+		newSc.variableMap = sc.second.variableMap;
+		copyEntity->addScriptable(newSc);
+	}
+
+	m_toAdd.push_back(copyEntity);
+
+	if (entity->hasComponent<CChildren>())
+	{
+		auto& Children = entity->getComponent<CChildren>();
+		copyEntity->addComponent<CChildren>();
+		for (auto& e : Children.childEntities)
+		{
+			auto childEntity = std::any_cast<std::shared_ptr<Entity>>(e.second);
+
+			auto child = InstantiatePrefab(childEntity);
+			auto& parentTrans = copyEntity->getComponent<CTransform>();
+			child->addComponent<CParent>(copyEntity->id(), copyEntity->tag(), parentTrans.pos, parentTrans.scale, parentTrans.angle);
+			copyEntity->getComponent<CChildren>().children.push_back({ child->id(), child->tag() });
+		}
+	}
+
+	return copyEntity;
+}
+
+std::shared_ptr<Entity> EntityManager::Instantiate(const std::shared_ptr<Entity>& entity)
+{
+	if (!entity) return nullptr;
+
+	std::shared_ptr<Entity> copyEntity = std::shared_ptr<Entity>(new Entity(m_totalEntities++, entity->tag()));
+	copyEntity->m_active = entity->m_active;
+	copyEntity->m_components = entity->m_components;
+	copyEntity->m_prefab = false;
+	instantiate(entity, copyEntity);
 	return copyEntity;
 }
 
 std::shared_ptr<Entity> EntityManager::Instantiate(const std::shared_ptr<Entity>& entity, const CTransform& transform)
 {
 	if (!entity) return nullptr;
-	std::shared_ptr<Entity> copyEntity = std::shared_ptr<Entity>(new Entity(m_totalEntities, entity->tag()));
+	std::shared_ptr<Entity> copyEntity = std::shared_ptr<Entity>(new Entity(m_totalEntities++, entity->tag()));
 	copyEntity->m_active = entity->m_active;
-	copyEntity->m_dead = entity->m_dead;
 	copyEntity->m_components = entity->m_components;
 
 	float px = transform.pos.x, py = transform.pos.y;
 	float scx = transform.scale.x, scy = transform.scale.y;
 	float a = transform.angle;
 	copyEntity->addComponent<CTransform>(Vec2(px, py), Vec2(scx, scy), a);
-
-	std::string newName = "(copy" + std::to_string(m_totalEntities) + ")";
-	if (copyEntity->hasComponent<CName>())
-	{
-		newName = entity->getComponent<CName>().name + newName;
-		copyEntity->addComponent<CName>(newName);
-	}
-	else
-	{
-		copyEntity->addComponent<CName>(newName);
-	}
-	for (auto& sc : entity->m_scriptables)
-	{
-		Scriptable newSc;
-		newSc.name = sc.second.name;
-		newSc.hasMapped = std::make_shared<bool>(*sc.second.hasMapped);
-		newSc.destroy = std::make_shared<bool>(*sc.second.destroy);
-		newSc.variableMap = sc.second.variableMap;
-		copyEntity->addScriptable(newSc);
-	}
-	m_totalEntities++;
-	m_toAdd.push_back(copyEntity);
+	instantiate(entity, copyEntity);
 	return copyEntity;
 }
 
@@ -157,10 +181,23 @@ std::shared_ptr<Entity> EntityManager::addEntity(const std::string& tag)
 	m_toAdd.push_back(e);
 	return e;
 }
+
+std::shared_ptr<Entity> EntityManager::addEntity(const std::string& tag, size_t id)
+{
+	auto e = std::shared_ptr<Entity>(new Entity(id, tag));
+	m_toAdd.push_back(e);
+	return e;
+}
+
+std::shared_ptr<Entity> EntityManager::createEntity(const std::string& tag, size_t id)
+{
+	auto e = std::shared_ptr<Entity>(new Entity(id, tag));
+	return e;
+}
+
 void EntityManager::destroyEntity(std::shared_ptr<Entity> e)
 {
 	if (e == nullptr) return;
-	e->destroy();
 	m_toDestroy.push_back(e);
 }
 
@@ -235,13 +272,8 @@ void EntityManager::update()
 
 	for (auto& e : m_toDestroy)
 	{
-		if (e->hasAnyScriptable())
-		{
-			for (auto& sc : e->m_scriptables)
-			{
-				(*sc.second.destroy) = true;
-			}
-		}
+		e->destroy();
+
 		auto entityIt = std::find(m_entities.begin(), m_entities.end(), e);
 		if (entityIt != m_entities.end()) {
 			m_entities.erase(entityIt);
@@ -286,11 +318,17 @@ void EntityManager::copyTo(EntityManager& other)
 		other.m_entityMap[e->tag()].push_back(e);
 		other.m_uniqueEntityMap[e->id()] = e;
 		std::pair<std::shared_ptr<Entity>, std::string> changeElem = { e, e->tag() };
-		if (std::find(m_toChangeTag.begin(), m_toChangeTag.end(), changeElem) != m_toChangeTag.end())
+
+		auto compareEntity = [&](const std::shared_ptr<Entity>& entity)
+			{ return entity->id() == e->id();};
+		auto compareEntityPair = [&](const std::pair<std::shared_ptr<Entity>, std::string>& pair)
+			{ return pair.first->id() == e->id(); };
+
+		if (std::find_if(m_toChangeTag.begin(), m_toChangeTag.end(), compareEntityPair) != m_toChangeTag.end())
 		{
 			other.m_toChangeTag.push_back(changeElem);
 		}
-		if (std::find(m_toDestroy.begin(), m_toDestroy.end(), e) != m_toDestroy.end())
+		if (std::find_if(m_toDestroy.begin(), m_toDestroy.end(), compareEntity) != m_toDestroy.end())
 		{
 			other.m_toDestroy.push_back(e);
 		}
@@ -314,7 +352,6 @@ void EntityManager::ChangeParent(std::shared_ptr<Entity>& entity, const std::sha
 	entity->addComponent<CParent>(parent->id(), parent->tag(), parentTrans.pos, parentTrans.scale, parentTrans.angle);
 	if (!parent->hasComponent<CChildren>()) { parent->addComponent<CChildren>(); }
 	parent->getComponent<CChildren>().children.push_back({ entity->id(), entity->tag() });
-	parent->getComponent<CChildren>().childEntities[entity->id()] = MakeEntityCopy(entity);
 }
 
 void EntityManager::MakeIndependent(const std::shared_ptr<Entity>& entity)
@@ -340,20 +377,117 @@ void EntityManager::DeleteEntity(const std::shared_ptr<Entity>& entity)
 {
 	if (!entity) return;
 	MakeIndependent(entity);
-	if (entity->hasComponent<CChildren>())
+	if (!entity->m_prefab)
 	{
-		auto& eChildren = entity->getComponent<CChildren>();
-		for (int i = 0; i < eChildren.children.size(); i++)
+		if (entity->hasComponent<CChildren>())
 		{
-			auto& c = eChildren.children[i];
-			auto& cEntity = getEntity(c.first);
-			DeleteEntity(cEntity);
-			i--;
+			auto& eChildren = entity->getComponent<CChildren>();
+			for (int i = 0; i < eChildren.children.size(); i++)
+			{
+				auto& c = eChildren.children[i];
+				auto& cEntity = getEntity(c.first);
+				DeleteEntity(cEntity);
+				i--;
+			}
 		}
 	}
 	destroyEntity(entity);
 }
 
+std::shared_ptr<Entity> EntityManager::MakePrefab(EntityManager& other, std::shared_ptr<Entity>& entity, bool reverse)
+{
+	if (!entity) return nullptr;
+	if (entity->m_prefabID.first)
+	{
+		auto compareEntity = [&](const std::shared_ptr<Entity>& e)
+			{ 
+				return e->m_prefabID.first && entity->m_prefabID.second == e->id();
+			};
+
+		auto it = std::find_if(other.m_entities.begin(), other.m_entities.end(), compareEntity);
+		if (it != other.m_entities.end())
+		{
+			return *it;
+		}
+	}
+
+	std::shared_ptr<Entity> copyEntity = std::shared_ptr<Entity>(new Entity(other.m_totalEntities++, entity->tag()));
+	copyEntity->m_active = entity->m_active;
+	copyEntity->m_components = entity->m_components;
+	copyEntity->m_dead = entity->m_dead;
+	copyEntity->m_prefabID = { true, entity->id() };
+	entity->m_prefabID = { true, copyEntity->id() };
+	for (auto& sc : entity->m_scriptables)
+	{
+		Scriptable newSc;
+		newSc.name = sc.second.name;
+		newSc.hasMapped = std::make_shared<bool>(*sc.second.hasMapped);
+		newSc.destroy = std::make_shared<bool>(*sc.second.destroy);
+		newSc.variableMap = sc.second.variableMap;
+		copyEntity->addScriptable(newSc);
+	}
+	if (reverse)
+	{
+		copyEntity->m_prefab = false;
+
+		if (entity->hasComponent<CChildren>())
+		{
+			auto& Children = entity->getComponent<CChildren>();
+			copyEntity->addComponent<CChildren>();
+			for (auto& e : Children.childEntities)
+			{
+				auto childEntity = std::any_cast<std::shared_ptr<Entity>>(e.second);
+				auto child = InstantiatePrefab(childEntity);
+				auto& parentTrans = copyEntity->getComponent<CTransform>();
+				child->addComponent<CParent>(copyEntity->id(), copyEntity->tag(), parentTrans.pos, parentTrans.scale, parentTrans.angle);
+				copyEntity->getComponent<CChildren>().children.push_back({ child->id(), child->tag() });
+			}
+		}
+	}
+	else
+	{
+		copyEntity->m_prefab = true;
+
+		copyEntity->removeComponent<CParent>();
+		if (entity->hasComponent<CChildren>())
+		{
+			auto& Children = entity->getComponent<CChildren>();
+			copyEntity->addComponent<CChildren>();
+			auto& childEntities = copyEntity->getComponent<CChildren>().childEntities;
+			for (auto& e : Children.children)
+			{
+				auto& child = getEntity(e.first);
+				childEntities[child->id()] = std::make_any<std::shared_ptr<Entity>>(MakeEntityCopy(child));
+			}
+		}
+	}
+	other.m_toAdd.push_back(copyEntity);
+
+	return copyEntity;
+}
+
+void EntityManager::UpdatePrefab(EntityManager& other, std::shared_ptr<Entity>& entity)
+{
+	if (entity->m_prefabID.first)
+	{
+		auto compareEntity = [&](const std::shared_ptr<Entity>& e)
+			{
+				return e->m_prefabID.first && entity->m_prefabID.second == e->id();
+			};
+
+		auto it = std::find_if(other.m_entities.begin(), other.m_entities.end(), compareEntity);
+		if (it != other.m_entities.end())
+		{
+			auto& e = *it;
+			size_t curID = e->m_id;
+			auto prefabData = e->m_prefabID;
+			e = MakeEntityCopy(entity);
+			e->m_id = curID;
+			e->m_prefabID = prefabData;
+			e->removeComponent<CParent>();
+		}
+	}
+}
 
 void EntityManager::Lua(sol::state& lua)
 {
@@ -372,7 +506,6 @@ void EntityManager::Lua(sol::state& lua)
 			static_cast<EntityVec & (EntityManager::*)(const std::string&)>(&EntityManager::getEntities)
 		),
 		"changeTag", &EntityManager::changeTag,
-		"Copy", &EntityManager::MakeEntityCopy,
 		"Destroy", &EntityManager::DeleteEntity,
 		"Instantiate", sol::overload(
 			static_cast<std::shared_ptr<Entity>(EntityManager::*)(const std::shared_ptr<Entity>&)>(&EntityManager::Instantiate),

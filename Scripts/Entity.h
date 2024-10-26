@@ -9,6 +9,7 @@ class EntityManager;
 class ScriptManager;
 class PhysicsManager;
 class Inspector;
+class Editor;
 
 typedef std::tuple
 <
@@ -35,12 +36,12 @@ typedef std::map<std::string, Scriptable> Scripts;
 class Entity
 {
 	friend class EntityManager;
-
-	bool		   m_dead = false;
-	bool		   m_active =  true;
-	std::string	   m_tag =	   "default";
-	size_t		   m_id =	   0;
-	ComponentTuple m_components;
+	bool					m_dead = false;
+	bool					m_prefab = false;
+	bool					m_active =  true;
+	std::string				m_tag =	   "default";
+	size_t					m_id =	   0;
+	ComponentTuple			m_components;
 
 	Entity(const size_t& id, const std::string& tag);
 
@@ -50,13 +51,17 @@ protected:
 	friend Inspector;
 	friend ScriptManager;
 	friend PhysicsManager;
+	friend Editor;
 	Scripts		   m_scriptables;
 	std::map<size_t, bool> firstCollisionIds = {};
+	std::pair<bool, size_t> m_prefabID;
+	void					setPrefab(const bool prefabFlag) { m_prefab = prefabFlag; }
 public:
 	size_t			  id()		 const;
 	bool			  isAlive()	 const;
 	bool			  isActive() const;
 	const std::string tag()		 const;
+	const std::pair<bool, size_t>& prefabData() { return m_prefabID; }
 	void			  disable();
 	void			  enable();
 	template <typename C>

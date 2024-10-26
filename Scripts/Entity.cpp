@@ -9,6 +9,10 @@ Entity::Entity(const size_t& id, const std::string& tag)
 void Entity::destroy()
 {
 	m_dead = true;
+	for (auto& sc : m_scriptables)
+	{
+		(*sc.second.destroy) = true;
+	}
 }
 
 void Entity::disable()
@@ -93,6 +97,7 @@ void Entity::Lua(sol::state& lua)
 	lua.new_usertype<Entity>("Entity",
 		"id", &Entity::id,
 		"tag", &Entity::tag,
+		"isAlive", &Entity::isAlive,
 		"hasTransform", &Entity::hasComponent<CTransform>,
 		"addTransform", [](std::shared_ptr<Entity>& entity, const Vec2& pos, const Vec2& scale, float angle) {
 			return entity->addComponent<CTransform>(pos, scale, angle);
@@ -105,14 +110,14 @@ void Entity::Lua(sol::state& lua)
 			return entity->addComponent<CName>(name);
 		},
 		"getName", [](std::shared_ptr<Entity>& entity) {
-			return entity->getComponent<CName>();
+			return &entity->getComponent<CName>();
 		},
 		"hasSize", &Entity::hasComponent<CSize>,
 		"addSize", [](std::shared_ptr<Entity>& entity, const Vec2& size) {
 			return entity->addComponent<CSize>(size);
 		},
 		"getSize", [](std::shared_ptr<Entity>& entity) {
-			return entity->getComponent<CSize>();
+			return &entity->getComponent<CSize>();
 		},
 		"hasBoxRender", & Entity::hasComponent<CBoxRender>,
 		"addBoxRender", sol::overload(
@@ -124,7 +129,7 @@ void Entity::Lua(sol::state& lua)
 			}
 		),
 		"getBoxRender", [](std::shared_ptr<Entity>& entity) {
-			return entity->getComponent<CBoxRender>();
+			return &entity->getComponent<CBoxRender>();
 		},
 		"hasCircleRender", & Entity::hasComponent<CCircleRender>,
 		"addCircleRender", sol::overload(
@@ -136,7 +141,7 @@ void Entity::Lua(sol::state& lua)
 			}
 		),
 		"getCircleRender", [](std::shared_ptr<Entity>& entity) {
-			return entity->getComponent<CCircleRender>();
+			return &entity->getComponent<CCircleRender>();
 		},
 		"hasCamera", & Entity::hasComponent<CCamera>,
 		"addCamera", sol::overload(
@@ -148,7 +153,7 @@ void Entity::Lua(sol::state& lua)
 			}
 		),
 		"getCamera", [](std::shared_ptr<Entity>& entity) {
-			return entity->getComponent<CCamera>();
+			return &entity->getComponent<CCamera>();
 		},
 		"hasBoxCollider", & Entity::hasComponent<CBoxCollider>,
 		"addBoxCollider", sol::overload(
@@ -160,7 +165,7 @@ void Entity::Lua(sol::state& lua)
 			}
 		),
 		"getBoxCollider", [](std::shared_ptr<Entity>& entity) {
-			return entity->getComponent<CBoxCollider>();
+			return &entity->getComponent<CBoxCollider>();
 		}
 		,
 		"hasCircleCollider", & Entity::hasComponent<CCircleCollider>,
@@ -173,7 +178,7 @@ void Entity::Lua(sol::state& lua)
 			}
 		),
 		"getCircleCollider", [](std::shared_ptr<Entity>& entity) {
-			return entity->getComponent<CCircleCollider>();
+			return &entity->getComponent<CCircleCollider>();
 		}
 	);
 }

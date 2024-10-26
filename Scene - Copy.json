@@ -65,13 +65,67 @@
             },
             {
                 "CIRCLECOLLIDER": 0.0,
+                "ENTITY": [
+                    [
+                        {
+                            "FILLCOLOR": [
+                                255,
+                                255,
+                                255,
+                                255
+                            ],
+                            "HASCHILDREN": false,
+                            "NAME": "Circle5",
+                            "OUTLINECOLOR": [
+                                0,
+                                0,
+                                0,
+                                255
+                            ],
+                            "POINTCOUNT": 30,
+                            "PX": 281.1794128417969,
+                            "PY": 266.09576416015625,
+                            "R": 0.0,
+                            "RENDER": "Circle",
+                            "SX": 1.0,
+                            "SY": 1.0,
+                            "TAG": "Default",
+                            "THICKNESS": 0.0
+                        },
+                        {
+                            "FILLCOLOR": [
+                                255,
+                                255,
+                                255,
+                                255
+                            ],
+                            "HASCHILDREN": false,
+                            "NAME": "Circle6",
+                            "OUTLINECOLOR": [
+                                0,
+                                0,
+                                0,
+                                255
+                            ],
+                            "POINTCOUNT": 30,
+                            "PX": 286.8790283203125,
+                            "PY": 188.21408081054688,
+                            "R": 0.0,
+                            "RENDER": "Circle",
+                            "SX": 1.0,
+                            "SY": 1.0,
+                            "TAG": "Default",
+                            "THICKNESS": 0.0
+                        }
+                    ]
+                ],
                 "FILLCOLOR": [
                     68,
                     240,
                     229,
                     255
                 ],
-                "HASCHILDREN": false,
+                "HASCHILDREN": true,
                 "NAME": "Bullet",
                 "OUTLINECOLOR": [
                     0,
@@ -166,11 +220,11 @@
         [
             {
                 "DIRECTORY": "C:\\Users\\Emmanuel-Okwara\\Documents\\Acoding\\Cplus\\Engine\\AbyssEngine\\Assets\\Scripts",
-                "NAME": "MoveObstacle.lua"
+                "NAME": "PlayerMove.lua"
             },
             {
                 "DIRECTORY": "C:\\Users\\Emmanuel-Okwara\\Documents\\Acoding\\Cplus\\Engine\\AbyssEngine\\Assets\\Scripts",
-                "NAME": "PlayerMove.lua"
+                "NAME": "MoveObstacle.lua"
             },
             {
                 "DIRECTORY": "C:\\Users\\Emmanuel-Okwara\\Documents\\Acoding\\Cplus\\Engine\\AbyssEngine\\Assets\\Scripts",

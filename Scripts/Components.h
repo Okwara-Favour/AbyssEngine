@@ -57,6 +57,7 @@ public:
 	float				outlineThickness = 0;
 	CBoxRender();
 	CBoxRender(sf::RectangleShape& rect);
+	void setOutlineThickness(float thickness) { outlineThickness = thickness; }
 };
 
 class CCircleRender :public Component

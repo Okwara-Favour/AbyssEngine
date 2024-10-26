@@ -39,6 +39,7 @@ public:
 	void ExecuteEntityScripts(Editor& editor, std::shared_ptr<Entity>& entity);
 	void UpdateSOL();
 	void ResolveMissingSharedSOL(Editor& editor);
+	void ResetClass();
 	void Close();
 };
 

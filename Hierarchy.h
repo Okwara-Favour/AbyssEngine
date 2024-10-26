@@ -17,5 +17,6 @@ public:
 	void Init(Editor& editor) override;
 	void Update(Editor& editor) override;
 	void DisplayEntities(Editor& editor);
+	void DisplayPrefabs(Editor& editor);
 };
 
