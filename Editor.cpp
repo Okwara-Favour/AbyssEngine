@@ -185,12 +185,14 @@ void Editor::Run()
 		if (isFullScreen && !fullScreen)
 		{
 			window.create(sf::VideoMode(1366, 768), "Abyss Engine");
+			window.setFramerateLimit(60);
 			isFullScreen = false;
 		}
 
 		if (!isFullScreen && fullScreen)
 		{
 			window.create(sf::VideoMode(1366, 768), "Abyss Engine", sf::Style::Fullscreen);
+			window.setFramerateLimit(60);
 			isFullScreen = true;
 		}
 		// Render

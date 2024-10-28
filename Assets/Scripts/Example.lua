@@ -6,7 +6,7 @@ Example.__index = Example
 
 Entity = nil;
 Count = 0
-Position = Vec2:new(1.0, 1.0)
+Velocity = Vec2:new(1.0, 1.0)
 
 function Example:Start()
     local self = setmetatable({}, Example)
@@ -14,7 +14,7 @@ function Example:Start()
     self.trea = "I am lua"
     --self.vec = Vec2:new(1.0, 1.0)
     --print(message)
-    --print("Current Position:", self.entity:getTransform().pos:toString())
+    --print("Current Velocity:", self.entity:getTransform().pos:toString())
     --ConsoleText("Som")
     Entity = self.entity;
     At.setEntity(Entity)
@@ -25,23 +25,24 @@ function Example:Update()
     Count = Count + 1
     --print(count)
 
-    --At.updateEntityPosition()
+    --At.updateEntityVelocity()
 
     if Listener:IsKeyPressed("Left") then
-        self.entity:getTransform().pos.x = self.entity:getTransform().pos.x - Position.x
+        self.entity:getTransform().pos.x = self.entity:getTransform().pos.x - Velocity.x
     end
     if Listener:IsKeyPressed("Right") then
-        self.entity:getTransform().pos.x = self.entity:getTransform().pos.x + Position.x
+        self.entity:getTransform().pos.x = self.entity:getTransform().pos.x + Velocity.x
     end
     if Listener:IsKeyPressed("Up") then
-        self.entity:getTransform().pos.y = self.entity:getTransform().pos.y - Position.y
+        self.entity:getTransform().pos.y = self.entity:getTransform().pos.y - Velocity.y
     end
     if Listener:IsKeyPressed("Down") then
-        self.entity:getTransform().pos.y = self.entity:getTransform().pos.y + Position.y
+        self.entity:getTransform().pos.y = self.entity:getTransform().pos.y + Velocity.y
     end
-    --Entity:getTransform().pos.x = Entity:getTransform().pos.x + Position.x
+    --Entity:getTransform().pos.x = Entity:getTransform().pos.x + Velocity.x
 
-    --print(Position.toString())
+    self.entity:getTransform().angle = self.entity:getTransform().angle - 5
+    --print(Velocity.toString())
     return self
 end
 

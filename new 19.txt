@@ -1,0 +1,25 @@
+After six months of endless research I am pleased to share a very difficult project I started this year.
+Abyss Engine(just a simulation of Unity Engine)
+
+I began this project this year(2024) and first started with a game engine I learnt from youtube,
+I went a step further into making an editor for the engine after completing my 3d Graphics Microcredential class at University of Victoria.
+
+Features:
+Entity Component System(ECS)
+Scene Management and Serialization
+Runtime Scripting and Dynamic Compilation
+Simple Collision Detection(AABB)
+Import System for Assets
+User Interface - scene hierarchy, component inspector, file viewer and debug console
+
+Languages:
+C++, Lua for scripting
+
+Third party libraries:
+SFML: Simple and Fast Multimedia Library
+IMGUI: Immediate Mode Graphical User Interface
+SOL: Simple Object Layer
+NFD: Native File Dialog
+nlohmann json
+
+Game Engine research resource: Dave Churchill, Intro to C++ Game Programming(2022-09), https://www.youtube.com/watch?v=S7lXSihz0ac&list=PL_xRyXins848nDj2v-TJYahzvs-XW9sVV
