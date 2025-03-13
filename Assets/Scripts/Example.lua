@@ -5,12 +5,9 @@ Example = {}
 Example.__index = Example
 
 Entity = nil;
-Count = 0
-Velocity = Vec2:new(1.0, 1.0)
 
 Example.ABYSS = {
-    Count = 0,
-    Velocity = Vec2:new(0.0, 0.0)
+    Velocity = Vec2:new(1.0, 1.0)
 }
 
 function Example:Start()
@@ -27,11 +24,11 @@ function Example:Start()
 end
 
 function Example:Update()
-    self.ABYSS.Count = self.ABYSS.Count + 1
+    --self.ABYSS.Count = self.ABYSS.Count + 1
     --print(count)
 
     --At.updateEntityVelocity()
-    --[[
+    
     if Listener:IsKeyPressed("Left") then
         self.entity:getTransform().pos.x = self.entity:getTransform().pos.x - self.ABYSS.Velocity.x
     end
@@ -45,8 +42,8 @@ function Example:Update()
         self.entity:getTransform().pos.y = self.entity:getTransform().pos.y + self.ABYSS.Velocity.y
     end
     
-    ]]--
-    Entity:getTransform().pos.x = Entity:getTransform().pos.x + self.ABYSS.Velocity.x
+    
+    --Entity:getTransform().pos.x = Entity:getTransform().pos.x + self.ABYSS.Velocity.x
     self.entity:getTransform().angle = self.entity:getTransform().angle - 5
     --print(Velocity.toString())
     return self

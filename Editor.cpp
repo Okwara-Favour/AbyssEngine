@@ -1272,6 +1272,7 @@ void Editor::StartGame()
 	if (gameMode) return;
 	gameMode = true;
 	entityManager.copyTo(EMCOPY);
+	scriptManager.ResolveMissingSharedSOL(*this);
 	selectedEntity = nullptr;
 	//scriptManager.RecompileClasses(*this);
 }

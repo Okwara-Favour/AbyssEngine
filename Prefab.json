@@ -335,16 +335,48 @@
             "SY": 1.0,
             "TAG": "Obstacle",
             "THICKNESS": 3.0
+        },
+        {
+            "FILLCOLOR": [
+                255,
+                255,
+                255,
+                255
+            ],
+            "HASCHILDREN": false,
+            "ID": 4,
+            "NAME": "PrefabTest",
+            "OUTLINECOLOR": [
+                0,
+                0,
+                0,
+                255
+            ],
+            "PREFAB": [
+                true,
+                2
+            ],
+            "PX": 283.7301940917969,
+            "PY": 386.9922180175781,
+            "R": 0.0,
+            "RENDER": "Rectangle",
+            "SCRIPTABLES": [
+                "PlayerMove"
+            ],
+            "SX": 2.0,
+            "SY": 2.0,
+            "TAG": "Test",
+            "THICKNESS": 0.0
         }
     ],
     "SCRIPT": [
         {
             "DIRECTORY": "C:\\Users\\Emmanuel-Okwara\\Documents\\Acoding\\Cplus\\Engine\\AbyssEngine\\Assets\\Scripts",
-            "NAME": "PlayerMove.lua"
+            "NAME": "MoveObstacle.lua"
         },
         {
             "DIRECTORY": "C:\\Users\\Emmanuel-Okwara\\Documents\\Acoding\\Cplus\\Engine\\AbyssEngine\\Assets\\Scripts",
-            "NAME": "MoveObstacle.lua"
+            "NAME": "PlayerMove.lua"
         },
         {
             "DIRECTORY": "C:\\Users\\Emmanuel-Okwara\\Documents\\Acoding\\Cplus\\Engine\\AbyssEngine\\Assets\\Scripts",
@@ -372,7 +404,7 @@
             "DURATION": 0.25,
             "ROTATE_FACTOR": 0.5,
             "SCALE_FACTOR": 0.5,
-            "TOTAL": 4,
+            "TOTAL": 5,
             "TRANSLATE_FACTOR": 1.0
         }
     ]

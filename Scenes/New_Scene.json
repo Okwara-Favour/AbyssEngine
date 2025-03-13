@@ -2,9 +2,9 @@
     "ENTITY": [
         {
             "CAMERACOLOR": [
-                17,
-                17,
-                18,
+                100,
+                100,
+                255,
                 255
             ],
             "HASCHILDREN": false,
@@ -24,241 +24,40 @@
         },
         {
             "FILLCOLOR": [
-                231,
-                55,
-                55,
+                255,
+                255,
+                255,
                 255
             ],
             "HASCHILDREN": false,
             "ID": 2,
-            "NAME": "Player",
+            "NAME": "PrefabTest",
             "OUTLINECOLOR": [
                 0,
                 0,
                 0,
                 255
             ],
-            "POINTCOUNT": 6,
-            "PREFAB": [
-                false,
-                0
-            ],
-            "PX": 397.093017578125,
-            "PY": 345.9931640625,
-            "R": 0.0,
-            "RENDER": "Circle",
-            "SCRIPTABLES": [
-                "PlayerMove",
-                "PlayerShoot"
-            ],
-            "SX": 2.0,
-            "SY": 2.0,
-            "TAG": "Player",
-            "THICKNESS": 4.0
-        },
-        {
-            "CIRCLECOLLIDER": 0.0,
-            "ENTITY": [
-                {
-                    "FILLCOLOR": [
-                        223,
-                        148,
-                        13,
-                        255
-                    ],
-                    "HASCHILDREN": false,
-                    "ID": 8,
-                    "NAME": "Circle8",
-                    "OUTLINECOLOR": [
-                        0,
-                        0,
-                        0,
-                        255
-                    ],
-                    "POINTCOUNT": 30,
-                    "PREFAB": [
-                        false,
-                        0
-                    ],
-                    "PX": 346.9903564453125,
-                    "PY": 117.48440551757813,
-                    "R": 0.0,
-                    "RENDER": "Circle",
-                    "SX": 0.5,
-                    "SY": 0.5,
-                    "TAG": "Projectile",
-                    "THICKNESS": 3.0
-                },
-                {
-                    "FILLCOLOR": [
-                        197,
-                        178,
-                        18,
-                        255
-                    ],
-                    "HASCHILDREN": false,
-                    "ID": 9,
-                    "NAME": "Circle9",
-                    "OUTLINECOLOR": [
-                        0,
-                        0,
-                        0,
-                        255
-                    ],
-                    "POINTCOUNT": 30,
-                    "PREFAB": [
-                        false,
-                        0
-                    ],
-                    "PX": 344.7942199707031,
-                    "PY": 206.68556213378906,
-                    "R": 0.0,
-                    "RENDER": "Circle",
-                    "SX": 0.5,
-                    "SY": 0.5,
-                    "TAG": "Projectile",
-                    "THICKNESS": 3.0
-                }
-            ],
-            "FILLCOLOR": [
-                68,
-                77,
-                222,
-                255
-            ],
-            "HASCHILDREN": true,
-            "ID": 3,
-            "NAME": "BulletA",
-            "OUTLINECOLOR": [
-                0,
-                0,
-                0,
-                255
-            ],
-            "POINTCOUNT": 3,
             "PREFAB": [
                 true,
-                1
+                4
             ],
-            "PX": 344.0,
-            "PY": 164.5,
-            "R": 0.0,
-            "RENDER": "Circle",
-            "SCRIPTABLES": [
-                "BulletScript"
-            ],
-            "SX": 1.0,
-            "SY": 1.0,
-            "TAG": "Projectile",
-            "THICKNESS": 3.0
-        },
-        {
-            "CIRCLECOLLIDER": 0.0,
-            "FILLCOLOR": [
-                21,
-                200,
-                208,
-                255
-            ],
-            "HASCHILDREN": false,
-            "ID": 6,
-            "NAME": "Obstacle",
-            "OUTLINECOLOR": [
-                0,
-                0,
-                0,
-                255
-            ],
-            "POINTCOUNT": 5,
-            "PREFAB": [
-                true,
-                2
-            ],
-            "PX": 887.5028686523438,
-            "PY": 340.7508544921875,
-            "R": 0.0,
-            "RENDER": "Circle",
-            "SCRIPTABLES": [
-                "MoveObstacle"
-            ],
-            "SX": 3.0,
-            "SY": 3.0,
-            "TAG": "Obstacle",
-            "THICKNESS": 2.0
-        },
-        {
-            "FILLCOLOR": [
-                44,
-                5,
-                5,
-                255
-            ],
-            "HASCHILDREN": false,
-            "ID": 7,
-            "NAME": "Spawner",
-            "OUTLINECOLOR": [
-                0,
-                0,
-                0,
-                255
-            ],
-            "PREFAB": [
-                false,
-                0
-            ],
-            "PX": 1469.313232421875,
-            "PY": 401.0078430175781,
+            "PX": 283.7301940917969,
+            "PY": 386.9922180175781,
             "R": 0.0,
             "RENDER": "Rectangle",
             "SCRIPTABLES": [
-                "ObstacleSpawner"
+                "PlayerMove"
             ],
-            "SX": 1.0,
-            "SY": 1.0,
-            "TAG": "Default",
+            "SX": 2.0,
+            "SY": 2.0,
+            "TAG": "Test",
             "THICKNESS": 0.0
-        },
-        {
-            "BOXCOLLIDER": [
-                0.0,
-                0.0
-            ],
-            "FILLCOLOR": [
-                15,
-                210,
-                227,
-                255
-            ],
-            "HASCHILDREN": false,
-            "ID": 10,
-            "NAME": "MiniObstacle",
-            "OUTLINECOLOR": [
-                0,
-                0,
-                0,
-                255
-            ],
-            "POINTCOUNT": 5,
-            "PREFAB": [
-                true,
-                3
-            ],
-            "PX": 885.0449829101563,
-            "PY": 237.14447021484375,
-            "R": 0.0,
-            "RENDER": "Circle",
-            "SCRIPTABLES": [
-                "MoveMiniObstacle"
-            ],
-            "SX": 1.0,
-            "SY": 1.0,
-            "TAG": "Obstacle",
-            "THICKNESS": 3.0
         }
     ],
     "STATISTICS": [
         {
-            "TOTAL": 11
+            "TOTAL": 3
         }
     ]
 }
