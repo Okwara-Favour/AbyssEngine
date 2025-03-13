@@ -340,11 +340,11 @@
     "SCRIPT": [
         {
             "DIRECTORY": "C:\\Users\\Emmanuel-Okwara\\Documents\\Acoding\\Cplus\\Engine\\AbyssEngine\\Assets\\Scripts",
-            "NAME": "MoveObstacle.lua"
+            "NAME": "PlayerMove.lua"
         },
         {
             "DIRECTORY": "C:\\Users\\Emmanuel-Okwara\\Documents\\Acoding\\Cplus\\Engine\\AbyssEngine\\Assets\\Scripts",
-            "NAME": "PlayerMove.lua"
+            "NAME": "MoveObstacle.lua"
         },
         {
             "DIRECTORY": "C:\\Users\\Emmanuel-Okwara\\Documents\\Acoding\\Cplus\\Engine\\AbyssEngine\\Assets\\Scripts",

@@ -2,8 +2,11 @@ BulletScript = {}
 BulletScript.__index = BulletScript
 
 
-RotationSpeed = 12
-Velocity = Vec2:new(5.0,0.0)
+BulletScript.ABYSS = {
+    RotationSpeed = 12,
+    Velocity = Vec2:new(5.0,0.0)
+}
+
 
 function BulletScript:Start()
     local self = setmetatable({}, BulletScript)
@@ -13,8 +16,8 @@ function BulletScript:Start()
 end
 
 function BulletScript:Update()
-    self.entity:getTransform().pos = self.entity:getTransform().pos + Velocity
-    self.entity:getTransform().angle = self.entity:getTransform().angle + RotationSpeed
+    self.entity:getTransform().pos = self.entity:getTransform().pos + self.ABYSS.Velocity
+    self.entity:getTransform().angle = self.entity:getTransform().angle + self.ABYSS.RotationSpeed
 
     if (self.destroyTimer <= 0) then
         EManager:Destroy(self.entity)
@@ -32,8 +35,8 @@ function BulletScript:OnCollisionEnter(collidedEntity)
         EManager:Destroy(collidedEntity)
         EManager:Destroy(self.entity)
     end
-    
     --print("enter", collidedEntity:getTransform().pos:toString())
+    return self
 end
 
 function BulletScript:OnCollisionExit(collidedEntity)
@@ -41,6 +44,7 @@ function BulletScript:OnCollisionExit(collidedEntity)
         --print("Collision End")
     end
     --print("exit", collidedEntity:getTransform().pos:toString())
+    return self
 end
 
 function SpawnMiniObstacles(entity, miniObstacle)

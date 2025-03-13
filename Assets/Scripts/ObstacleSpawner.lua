@@ -1,13 +1,16 @@
 ObstacleSpawner = {}
 ObstacleSpawner.__index = ObstacleSpawner
 
-SpawnInterval = 30
+ObstacleSpawner.ABYSS =
+{
+    SpawnInterval = 30
+}
 
 function ObstacleSpawner:Start()
     local self = setmetatable({}, ObstacleSpawner)
     self.camera = EManager:getEntityName("Camera")
     self.obstacle = GetPrefabByName("Obstacle")
-    self.countDown = SpawnInterval
+    self.countDown = self.ABYSS.SpawnInterval
     return self
 end
 
@@ -41,16 +44,16 @@ function ObstacleSpawner:Update()
         self.randomColorB = math.random(0, 255)
         self.Obs:getCircleRender().fillColor = Color:new(self.randomColorR, self.randomColorG, self.randomColorB, 255)
         self.Obs:getCircleRender().outlineColor = Color:new(self.randomColorG, self.randomColorB, self.randomColorR, 255)
-        self.countDown = SpawnInterval
+        self.countDown = self.ABYSS.SpawnInterval
     end
     self.countDown = self.countDown - 1
     return self
 end
 
 function ObstacleSpawner:OnCollisionEnter(collidedEntity)
-    
+    return self
 end
 
 function ObstacleSpawner:OnCollisionExit(collidedEntity)
-    
+    return self
 end

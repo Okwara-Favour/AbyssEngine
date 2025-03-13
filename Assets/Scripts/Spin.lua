@@ -2,7 +2,9 @@ Spin = {}
 Spin.__index = Spin
 
 
-RotationSpeed = 20
+Spin.ABYSS = {
+    RotationSpeed = 20
+}
 
 function Spin:Start()
     local self = setmetatable({}, Spin)
@@ -10,7 +12,7 @@ function Spin:Start()
 end
 
 function Spin:Update()
-    self.entity:getTransform().angle = self.entity:getTransform().angle + RotationSpeed
+    self.entity:getTransform().angle = self.entity:getTransform().angle + self.ABYSS.RotationSpeed
     return self
 end
 
@@ -20,12 +22,12 @@ function Spin:OnCollisionEnter(collidedEntity)
         EManager:Destroy(self.entity)
     end
     
-    --print("enter", collidedEntity:getTransform().pos:toString())
+    return self
 end
 
 function Spin:OnCollisionExit(collidedEntity)
     if collidedEntity:tag() == "Obstacle" then
         --print("Collision End")
     end
-    --print("exit", collidedEntity:getTransform().pos:toString())
+    return self
 end

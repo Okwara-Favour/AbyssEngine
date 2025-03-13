@@ -9,19 +9,22 @@ namespace fs = std::filesystem;
 
 class Editor;
 class Entity;
+class Inspector;
 
 class ScriptManager
 {
 	friend Editor;
+	friend Inspector;
 	const std::string DIR = "Scripts";
 	fs::path currentDirectory;
 	std::string readFile(const std::string& path);
 	bool addScript(const std::string& name, const std::string& filename);
 	std::map<size_t, std::vector<Scriptable>> allSOL;
+	std::unordered_map<size_t, std::unordered_map<std::string, sol::environment>> allEntityEnvironment;
 	std::unordered_map<std::string, sol::environment> allEnvironment;
-	void mapEnvironmentVariables(std::unordered_map<std::string, std::any>& toPush, sol::environment& env);
-	void pushEnvironmentVariables(std::unordered_map<std::string, std::any>& toPush, std::unordered_map<std::string, std::any>& toRestore, sol::environment& env);
-	void popEnvironmentVariables(std::unordered_map<std::string, std::any>& toRestore, sol::environment& env);
+	void mapEnvironmentVariables(std::unordered_map<std::string, std::any>& toPush, sol::environment& env, const std::string& envName);
+	void pushEnvironmentVariables(Scriptable& script);
+	void popEnvironmentVariables(Scriptable& script);
 public:
 	sol::state lua;
 	std::vector<std::string> environmentNames;

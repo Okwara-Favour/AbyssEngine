@@ -1,14 +1,18 @@
 MoveObstacle = {}
 MoveObstacle.__index = MoveObstacle
 
-RotationSpeed = 2
-VelocityRangeX = Vec2:new(-2.0, -6.0)
+MoveObstacle.ABYSS = {
+    RotationSpeed = 10,
+    VelocityRangeX = Vec2:new(-2.0, -6.0)
+}
+
+
 
 function MoveObstacle:Start()
-    local self = setmetatable({}, MoveObstacle)
+    --local self = setmetatable({}, MoveObstacle)
     self.camera = EManager:getEntityName("Camera")
 
-    self.randomX = VelocityRangeX.x + (VelocityRangeX.y - VelocityRangeX.x) * math.random()
+    self.randomX = self.ABYSS.VelocityRangeX.x + (self.ABYSS.VelocityRangeX.y - self.ABYSS.VelocityRangeX.x) * math.random()
     
     self.player = EManager:getEntityName("Player")
     
@@ -44,14 +48,16 @@ function MoveObstacle:Update()
     end
 
     self.entity:getTransform().pos = self.entity:getTransform().pos + self.velocity
-    self.entity:getTransform().angle = self.entity:getTransform().angle + RotationSpeed
+    self.entity:getTransform().angle = self.entity:getTransform().angle + self.ABYSS.RotationSpeed
     return self
 end
 
 function MoveObstacle:OnCollisionEnter(collidedEntity)
+    return self
 end
 
 function MoveObstacle:OnCollisionExit(collidedEntity)
+    return self
 end
 
 function MoveObstacle:SetVelocityTowardsPlayer()
@@ -64,7 +70,7 @@ function MoveObstacle:SetVelocityTowardsPlayer()
         local direction = playerPos - obstaclePos
         direction:normalize()
         -- Set velocity with random speed
-        local randomSpeed = VelocityRangeX.x + (VelocityRangeX.y - VelocityRangeX.x) * math.random()
+        local randomSpeed = self.ABYSS.VelocityRangeX.x + (self.ABYSS.VelocityRangeX.y - self.ABYSS.VelocityRangeX.x) * math.random()
         self.velocity = direction * math.abs(randomSpeed)
     end
 end

@@ -401,49 +401,79 @@ void Inspector::displayComponents(Editor& editor, std::shared_ptr<Entity>& selec
                         {
                             int intValue = std::any_cast<int>(varValue);
                             ImGui::InputInt(k.first.c_str(), &intValue);
-                            varValue = std::make_any<int>(intValue);
+                            
+                            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                                varValue = std::make_any<int>(intValue);
+                                if (editor.gameMode) editor.scriptManager.pushEnvironmentVariables(script.second);
+                            }
                         }
                         else if (varValue.type() == typeid(unsigned int))
                         {
                             unsigned int uintValue = std::any_cast<unsigned int>(varValue);
                             ImGui::InputScalar(k.first.c_str(), ImGuiDataType_U32, &uintValue);
-                            varValue = std::make_any<unsigned int>(uintValue);
+                            
+                            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                                varValue = std::make_any<unsigned int>(uintValue);
+                                if (editor.gameMode) editor.scriptManager.pushEnvironmentVariables(script.second);
+                            }
                         }
                         else if (varValue.type() == typeid(float))
                         {
                             float floatValue = std::any_cast<float>(varValue);
                             ImGui::InputFloat(k.first.c_str(), &floatValue);
-                            varValue = std::make_any<float>(floatValue);
+                            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                                varValue = std::make_any<float>(floatValue);
+                                if (editor.gameMode) editor.scriptManager.pushEnvironmentVariables(script.second);
+                            }
                         }
                         else if (varValue.type() == typeid(double))
                         {
                             double doubleValue = std::any_cast<double>(varValue);
                             ImGui::InputDouble(k.first.c_str(), &doubleValue);
-                            varValue = std::make_any<double>(doubleValue);
+                            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                                varValue = std::make_any<double>(doubleValue);
+                                if (editor.gameMode) editor.scriptManager.pushEnvironmentVariables(script.second);
+                            }
+                            
                         }
                         else if (varValue.type() == typeid(long))
                         {
                             long longValue = std::any_cast<long>(varValue);
                             ImGui::InputScalar(k.first.c_str(), ImGuiDataType_S64, &longValue);
-                            varValue = std::make_any<long>(longValue);
+                            
+                            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                                varValue = std::make_any<long>(longValue);
+                                if (editor.gameMode) editor.scriptManager.pushEnvironmentVariables(script.second);
+                            }
                         }
                         else if (varValue.type() == typeid(unsigned long))
                         {
                             unsigned long ulongValue = std::any_cast<unsigned long>(varValue);
                             ImGui::InputScalar(k.first.c_str(), ImGuiDataType_U64, &ulongValue);
-                            varValue = std::make_any<unsigned long>(ulongValue);
+                            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                                varValue = std::make_any<unsigned long>(ulongValue);
+                                if (editor.gameMode) editor.scriptManager.pushEnvironmentVariables(script.second);
+                            }
                         }
                         else if (varValue.type() == typeid(long long))
                         {
                             long long longlongValue = std::any_cast<long long>(varValue);
                             ImGui::InputScalar(k.first.c_str(), ImGuiDataType_S64, &longlongValue);
-                            varValue = std::make_any<long long>(longlongValue);
+                            
+                            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                                varValue = std::make_any<long long>(longlongValue);
+                                if (editor.gameMode) editor.scriptManager.pushEnvironmentVariables(script.second);
+                            }
                         }
                         else if (varValue.type() == typeid(unsigned long long))
                         {
                             unsigned long long ulonglongValue = std::any_cast<unsigned long long>(varValue);
                             ImGui::InputScalar(k.first.c_str(), ImGuiDataType_U64, &ulonglongValue);
-                            varValue = std::make_any<unsigned long long>(ulonglongValue);
+                            
+                            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                                varValue = std::make_any<unsigned long long>(ulonglongValue);
+                                if (editor.gameMode) editor.scriptManager.pushEnvironmentVariables(script.second);
+                            }
                         }
                         else if (varValue.type() == typeid(std::string))
                         {
@@ -452,14 +482,22 @@ void Inspector::displayComponents(Editor& editor, std::shared_ptr<Entity>& selec
                             std::size_t strLength = strValue.copy(buffer.data(), buffer.size() - 1);
                             buffer[strLength] = '\0';
                             ImGui::InputText(k.first.c_str(), buffer.data(), buffer.size());
-                            varValue = std::make_any<std::string>(buffer.data());
+                            
+                            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                                varValue = std::make_any<std::string>(buffer.data());
+                                if (editor.gameMode) editor.scriptManager.pushEnvironmentVariables(script.second);
+                            }
                         }
                         else if (varValue.type() == typeid(Vec2))
                         {
                             Vec2 vec2Value = std::any_cast<Vec2>(varValue);
                             float vecArray[2] = { vec2Value.x, vec2Value.y };
                             ImGui::InputFloat2(k.first.c_str(), vecArray);
-                            varValue = std::make_any<Vec2>(Vec2(vecArray[0], vecArray[1]));
+                            
+                            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                                varValue = std::make_any<Vec2>(Vec2(vecArray[0], vecArray[1]));
+                                if (editor.gameMode) editor.scriptManager.pushEnvironmentVariables(script.second);
+                            }
                         }
                         ImGui::Separator();
                     }

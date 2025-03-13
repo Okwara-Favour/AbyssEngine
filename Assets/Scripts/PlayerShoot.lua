@@ -2,6 +2,7 @@ PlayerShoot = {}
 PlayerShoot.__index = PlayerShoot
 
 --ShootRate = 100
+PlayerShoot.ABYSS = {}
 
 function PlayerShoot:Start()
     local self = setmetatable({}, PlayerShoot)
@@ -28,9 +29,9 @@ function PlayerShoot:Update()
 end
 
 function PlayerShoot:OnCollisionEnter(collidedEntity)
-    
+    return self
 end
 
 function PlayerShoot:OnCollisionExit(collidedEntity)
-    
+    return self
 end

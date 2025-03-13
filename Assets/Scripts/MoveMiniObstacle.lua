@@ -1,14 +1,18 @@
 MoveMiniObstacle = {}
 MoveMiniObstacle.__index = MoveMiniObstacle
 
-RotationSpeed = 2
-VelocityRangeX = Vec2:new(-2.0, 2.0)
-VelocityRangeY = Vec2:new(-2.0, 2.0)
+MoveMiniObstacle.ABYSS = {
+    RotationSpeed = 2,
+    VelocityRangeX = Vec2:new(-2.0, 2.0),
+    VelocityRangeY = Vec2:new(-2.0, 2.0)
+}
+
+
 
 function MoveMiniObstacle:Start()
-    local self = setmetatable({}, MoveMiniObstacle)
-    self.randomX = VelocityRangeX.x + (VelocityRangeX.y - VelocityRangeX.x) * math.random()
-    self.randomY = VelocityRangeY.x + (VelocityRangeY.y - VelocityRangeY.x) * math.random()
+    --local self = setmetatable({}, MoveMiniObstacle)
+    self.randomX = self.ABYSS.VelocityRangeX.x + (self.ABYSS.VelocityRangeX.y - self.ABYSS.VelocityRangeX.x) * math.random()
+    self.randomY = self.ABYSS.VelocityRangeY.x + (self.ABYSS.VelocityRangeY.y - self.ABYSS.VelocityRangeY.x) * math.random()
 
     self.velocity = Vec2:new(self.randomX, self.randomY)
 
@@ -25,14 +29,16 @@ function MoveMiniObstacle:Update()
     self.miniVelocity = self.miniVelocity * 2  -- Scale the velocity as needed, adjust the multiplier
 
     self.entity:getTransform().pos = self.entity:getTransform().pos + self.velocity
-    self.entity:getTransform().angle = self.entity:getTransform().angle + RotationSpeed
+    self.entity:getTransform().angle = self.entity:getTransform().angle + self.ABYSS.RotationSpeed
 
     self.destroyTimer = self.destroyTimer - 1
     return self
 end
 
 function MoveMiniObstacle:OnCollisionEnter(collidedEntity)
+    return self
 end
 
 function MoveMiniObstacle:OnCollisionExit(collidedEntity)
+    return self
 end

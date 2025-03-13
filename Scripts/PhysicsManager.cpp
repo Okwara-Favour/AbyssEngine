@@ -13,7 +13,8 @@ void PhysicsManager::OnLuaCollisionEnter(Editor& editor, Scriptable& script, Gam
 				if (collidedEntity && !colId.second)
 				{
 					(script.instance)["entity"] = entity;
-					OnCollisionEnter(script.instance, collidedEntity);
+					sol::table OnColEnterTab = OnCollisionEnter(script.instance, collidedEntity);
+					(script.instance) = OnColEnterTab;
 					colId.second = true;
 				}
 			}
@@ -41,7 +42,8 @@ void PhysicsManager::OnLuaCollisionExit(Editor& editor, Scriptable& script, Game
 					if (!collision.checkCollison(entity, collidedEntity) && iter->second)
 					{
 						(script.instance)["entity"] = entity;
-						OnCollisionExit(script.instance, collidedEntity);
+						sol::table OnColExitTab = OnCollisionExit(script.instance, collidedEntity);
+						(script.instance) = OnColExitTab;
 						iter = entity->firstCollisionIds.erase(iter);
 					}
 					else {
@@ -68,7 +70,8 @@ void PhysicsManager::OnLuaCollision(Editor& editor, Scriptable& script, GameObje
 				if (collidedEntity && collision.checkCollison(entity, collidedEntity))
 				{
 					(script.instance)["entity"] = entity;
-					OnCollision(script.instance, collidedEntity);
+					sol::table OnColTab = OnCollision(script.instance, collidedEntity);
+					(script.instance) = OnColTab;
 				}
 			}
 		}

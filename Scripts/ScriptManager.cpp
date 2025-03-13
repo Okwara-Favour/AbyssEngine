@@ -165,6 +165,7 @@ void ScriptManager::ResetScript(Editor& editor, const std::string& filename, con
 				(*value.hasMapped) = false;
 				if(value.scriptClass) value.scriptClass.reset();
 				if(value.instance) value.instance.reset();
+				if (allEntityEnvironment[s.first][value.name]) allEntityEnvironment[s.first][value.name].reset();
 				auto entity = editor.entityManager.safeGetEntity(s.first);
 				if(entity) entity->m_scriptables[name].variableMap.clear();
 			}
@@ -184,14 +185,21 @@ void ScriptManager::CompileEntityEnvironment(Editor& editor, std::shared_ptr<Ent
 	{
 		if (!(*s.second.hasMapped))
 		{
-			auto envIter = allEnvironment.find(s.second.name);
-			if (envIter == allEnvironment.end()) {
-				std::cout << "Warning: script environment not available for " << s.second.name << std::endl;
+			sol::environment tempEnv(lua, sol::create, lua.globals());
+			auto result = lua.safe_script(scriptsMap[s.second.name], tempEnv);
+			if (!result.valid()) {
+				sol::error err = result; // Capture the error
+				editor.ConsoleText("Script: " + s.second.name + " environment construction failed for " + std::to_string(entity->m_id));
 				continue;
 			}
-			auto& env = envIter->second;
+			else
+			{
+				allEntityEnvironment[entity->m_id][s.second.name] = tempEnv;
+				//editor.ConsoleText("Script: " + s.second.name + " environment construction succeeded for " + std::to_string(entity->m_id));
+			}
+			auto& env = allEntityEnvironment[entity->m_id][s.second.name];
 			//std::cout << "Mapping" << std::endl;
-			mapEnvironmentVariables(s.second.variableMap, env);
+			mapEnvironmentVariables(s.second.variableMap, env, s.second.name);
 			(*s.second.hasMapped) = true;
 			Scriptable sc;
 			sc.name = s.second.name;
@@ -218,37 +226,35 @@ void ScriptManager::ExecuteEntityScripts(Editor& editor, std::shared_ptr<Entity>
 			if(s.second.scriptClass) (s.second.scriptClass).reset();
 			if(s.second.instance) (s.second.instance).reset();
 			//editor.ConsoleText(entity->getComponent<CName>().name + " " + s.second.name + " " + std::to_string((*s.second.destroy)));
-			auto envIter = allEnvironment.find(s.second.name);
-			if (envIter == allEnvironment.end()) {
-				std::cout << "Warning: script environment not available for " << s.second.name << std::endl;
+			auto envIter = allEntityEnvironment.find(entity->m_id);
+			if (envIter == allEntityEnvironment.end()) {
+				editor.ConsoleText("Warning: script environment not available for " + s.second.name + " " + std::to_string(entity->m_id));
 				continue;
 			}
 			// Access environment
-			auto& env = envIter->second;
-			std::unordered_map<std::string, std::any> variableMap;
-			std::unordered_map<std::string, std::any> tempVariableMap;
-			pushEnvironmentVariables(s.second.variableMap, tempVariableMap, env);
-
+			auto& env = (envIter->second)[s.second.name];
+			
 			sol::table tempScriptClass = env[s.second.name];
-
 			if (!tempScriptClass.valid()) {
 				editor.ConsoleText("Error: script class not found for " + s.second.name);
-				popEnvironmentVariables(tempVariableMap, env);
 				continue;
 			}
 			s.second.scriptClass = tempScriptClass;
+
 			sol::function startFunc = (s.second.scriptClass)["Start"];
 			if (!startFunc.valid()) {
-				popEnvironmentVariables(tempVariableMap, env);
 				continue;
 			}
 			try
 			{
 				(s.second.scriptClass)["entity"] = entity;
+				pushEnvironmentVariables(s.second);
 				sol::table Start = startFunc(s.second.scriptClass);
+				popEnvironmentVariables(s.second);
+
 				s.second.instance = Start;
 				s.second.instantiated = std::make_shared<bool>(true);
-				//mapLuaToAny(Start, s.second);
+				
 				std::string name = s.second.name;
 				if (allSOL.find(entity->id()) == allSOL.end())
 				{
@@ -281,15 +287,11 @@ void ScriptManager::ExecuteEntityScripts(Editor& editor, std::shared_ptr<Entity>
 			}
 			catch (const sol::error& e) {
 				editor.ConsoleText(std::string(e.what()));
-				popEnvironmentVariables(tempVariableMap, env);
 				continue;
 			}
-			popEnvironmentVariables(tempVariableMap, env);
 		}
 
-		//mapAnyToLua(editor, s.second);
 		std::unordered_map<std::string, std::any> tempVariableMap;
-		pushEnvironmentVariables(s.second.variableMap, tempVariableMap, (allEnvironment[s.second.name]));
 		sol::function updateFunc = (s.second.scriptClass)["Update"];
 		if (updateFunc.valid()) {
 			try {
@@ -302,11 +304,13 @@ void ScriptManager::ExecuteEntityScripts(Editor& editor, std::shared_ptr<Entity>
 				editor.ConsoleText("Lua error in Update: " + std::string(e.what()));
 			}
 		}
+		
 		editor.physicsManager.OnLuaCollisionEnter(editor, s.second, entity);
 		editor.physicsManager.OnLuaCollisionExit(editor, s.second, entity);
 		editor.physicsManager.OnLuaCollision(editor, s.second, entity);
 
-		popEnvironmentVariables(tempVariableMap, (allEnvironment[s.second.name]));
+		popEnvironmentVariables(s.second);
+		
 	}
 }
 
@@ -319,6 +323,10 @@ void ScriptManager::UpdateSOL()
 		{
 			if (iter->destroy && (*iter->destroy))
 			{
+				if (allEntityEnvironment[s.first][iter->name]) {
+					allEntityEnvironment[s.first][iter->name].reset();
+					allEntityEnvironment[s.first].erase(iter->name);
+				}
 				(*iter->destroy) = false;
 				//std::cout << "Removing sol reference" << iter->name << std::endl;
 				if(iter->scriptClass) (iter->scriptClass).reset();
@@ -337,9 +345,11 @@ void ScriptManager::UpdateSOL()
 			lua.collect_garbage();
 		}
 	}
+
 	for (auto& t : toRemove)
 	{
 		allSOL.erase(t);
+		allEntityEnvironment.erase(t);
 	}
 }
 
@@ -351,9 +361,13 @@ void ScriptManager::ResetClass()
 		{
 			if (sc.scriptClass) (sc.scriptClass).reset();
 			if (sc.instance) (sc.instance).reset();
+			if (allEntityEnvironment[s.first][sc.name]) {
+				allEntityEnvironment[s.first][sc.name].reset();
+			}
 		}
 	}
 	allSOL.clear();
+	allEntityEnvironment.clear();
 	lua.collect_garbage();
 }
 
@@ -365,6 +379,9 @@ void ScriptManager::Close()
 		{
 			if(sc.scriptClass) (sc.scriptClass).reset();
 			if(sc.instance) (sc.instance).reset();
+			if (allEntityEnvironment[s.first][sc.name]) {
+				allEntityEnvironment[s.first][sc.name].reset();
+			}
 		}
 	}
 	for (auto& e : allEnvironment)
@@ -373,6 +390,7 @@ void ScriptManager::Close()
 	}
 	allSOL.clear();
 	allEnvironment.clear();
+	allEntityEnvironment.clear();
 
 	scriptsMap.clear();
 	scriptsDirectoryMap.clear();
@@ -408,6 +426,19 @@ void ScriptManager::ResolveMissingSharedSOL(Editor& editor)
 					sc.destroy = s.second.destroy;
 					sc.hasMapped = s.second.hasMapped;
 					allSOL[entity->id()].push_back(sc);
+
+					sol::environment tempEnv(lua, sol::create, lua.globals());
+					auto result = lua.safe_script(scriptsMap[s.second.name], tempEnv);
+					if (!result.valid()) {
+						sol::error err = result; // Capture the error
+						editor.ConsoleText("Script: " + s.second.name + " environment construction failed for " + std::to_string(entity->m_id));
+						continue;
+					}
+					else
+					{
+						allEntityEnvironment[entity->m_id][s.second.name] = tempEnv;
+						editor.ConsoleText("Script: " + s.second.name + " environment construction succeeded for " + std::to_string(entity->m_id));
+					}
 				}
 			}
 			else if (iter == allSOL.end())
@@ -421,137 +452,143 @@ void ScriptManager::ResolveMissingSharedSOL(Editor& editor)
 				sc.destroy = s.second.destroy;
 				sc.hasMapped = s.second.hasMapped;
 				allSOL[entity->id()].push_back(sc);
+
+				sol::environment tempEnv(lua, sol::create, lua.globals());
+				auto result = lua.safe_script(scriptsMap[s.second.name], tempEnv);
+				if (!result.valid()) {
+					sol::error err = result; // Capture the error
+					editor.ConsoleText("Script: " + s.second.name + " environment re-construction failed for " + std::to_string(entity->m_id));
+					continue;
+				}
+				else
+				{
+					allEntityEnvironment[entity->m_id][s.second.name] = tempEnv;
+					editor.ConsoleText("Script: " + s.second.name + " environment re-construction succeeded for " + std::to_string(entity->m_id));
+				}
 			}
 		}
 	}
 }
 
-void ScriptManager::mapEnvironmentVariables(std::unordered_map<std::string, std::any>& toPush,	sol::environment& env)
+void ScriptManager::mapEnvironmentVariables(std::unordered_map<std::string, std::any>& toPush, sol::environment& env, const std::string& envName)
 {
-	for (const auto& pair : env)
+	sol::table tempScriptClass = env[envName];
+	sol::table_proxy abyssTableProxy = (tempScriptClass)["ABYSS"];
+
+	if (abyssTableProxy.valid())
 	{
-		std::string varName = pair.first.as<std::string>();
-		sol::object varValue = pair.second;
-		//std::cout << "Mapping" << " " << varName << std::endl;
-		// Store the original value in toRestore before overwriting
-		if (varValue.valid())
+		sol::table abyssTable = abyssTableProxy;
+		for (const auto& pair : abyssTable)
 		{
-			if (varValue.is<int>()) {
-				toPush[varName] = varValue.as<int>();
-			}
-			else if (varValue.is<unsigned int>()) {
-				toPush[varName] = varValue.as<unsigned int>();
-			}
-			else if (varValue.is<float>()) {
-				toPush[varName] = varValue.as<float>();
-			}
-			else if (varValue.is<double>()) {
-				toPush[varName] = varValue.as<double>();
-			}
-			else if (varValue.is<std::string>()) {
-				toPush[varName] = varValue.as<std::string>();
-			}
-			else if (varValue.is<std::shared_ptr<Entity>>()) {
-				toPush[varName] = varValue.as<std::shared_ptr<Entity>>();
-			}
-			else if (varValue.is<Vec2>()) {
-				toPush[varName] = varValue.as<Vec2>();
+			std::string varName = pair.first.as<std::string>();
+			sol::object varValue = pair.second;
+			//std::cout << "Mapping" << " " << varName << std::endl;
+			// Store the original value in toRestore before overwriting
+			if (varValue.valid())
+			{
+				if (varValue.is<int>()) {
+					toPush[varName] = varValue.as<int>();
+				}
+				else if (varValue.is<unsigned int>()) {
+					toPush[varName] = varValue.as<unsigned int>();
+				}
+				else if (varValue.is<float>()) {
+					toPush[varName] = varValue.as<float>();
+				}
+				else if (varValue.is<double>()) {
+					toPush[varName] = varValue.as<double>();
+				}
+				else if (varValue.is<std::string>()) {
+					toPush[varName] = varValue.as<std::string>();
+				}
+				else if (varValue.is<std::shared_ptr<Entity>>()) {
+					toPush[varName] = varValue.as<std::shared_ptr<Entity>>();
+				}
+				else if (varValue.is<Vec2>()) {
+					toPush[varName] = varValue.as<Vec2>();
+				}
 			}
 		}
 	}
+
+	
 }
 
-void ScriptManager::pushEnvironmentVariables(std::unordered_map<std::string, std::any>& toPush,
-	std::unordered_map<std::string, std::any>& toRestore,
-	sol::environment& env)
+void ScriptManager::pushEnvironmentVariables(Scriptable& script)
 {
-	for (const auto& pair : toPush)
+	sol::table_proxy abyssTableProxy = (script.scriptClass)["ABYSS"];
+
+	if (abyssTableProxy.valid())
 	{
-		const std::string& varName = pair.first;
-		const std::any& varValue = pair.second;
-		// Save the original value from the Lua environment to restore later
-		sol::object originalValue = env[varName];
-		if (originalValue.valid())
+		sol::table abyssTable = abyssTableProxy;
+		for (const auto& pair : script.variableMap)
 		{
-			// Store the original Lua variable in toRestore before overwriting
-			if (originalValue.is<int>()) {
-				toRestore[varName] = originalValue.as<int>();
+			const std::string& varName = pair.first;
+			const std::any& varValue = pair.second;
+			// Now push the new value from toPush into the Lua environment
+			if (varValue.type() == typeid(int)) {
+				abyssTable[varName] = std::any_cast<int>(varValue);
 			}
-			else if (originalValue.is<unsigned int>()) {
-				toRestore[varName] = originalValue.as<unsigned int>();
+			else if (varValue.type() == typeid(unsigned int)) {
+				abyssTable[varName] = std::any_cast<unsigned int>(varValue);
 			}
-			else if (originalValue.is<float>()) {
-				toRestore[varName] = originalValue.as<float>();
+			else if (varValue.type() == typeid(float)) {
+				abyssTable[varName] = std::any_cast<float>(varValue);
 			}
-			else if (originalValue.is<double>()) {
-				toRestore[varName] = originalValue.as<double>();
+			else if (varValue.type() == typeid(double)) {
+				abyssTable[varName] = std::any_cast<double>(varValue);
 			}
-			else if (originalValue.is<std::string>()) {
-				toRestore[varName] = originalValue.as<std::string>();
+			else if (varValue.type() == typeid(std::string)) {
+				abyssTable[varName] = std::any_cast<std::string>(varValue);
 			}
-			else if (originalValue.is<std::shared_ptr<Entity>>()) {
-				toRestore[varName] = originalValue.as<std::shared_ptr<Entity>>();
+			else if (varValue.type() == typeid(std::shared_ptr<Entity>)) {
+				abyssTable[varName] = std::any_cast<std::shared_ptr<Entity>>(varValue);
 			}
-			else if (originalValue.is<Vec2>()) {
-				toRestore[varName] = originalValue.as<Vec2>();
+			else if (varValue.type() == typeid(Vec2)) {
+				abyssTable[varName] = std::any_cast<Vec2>(varValue);
 			}
-		}
-
-		// Now push the new value from toPush into the Lua environment
-		if (varValue.type() == typeid(int)) {
-			env[varName] = std::any_cast<int>(varValue);
-		}
-		else if (varValue.type() == typeid(unsigned int)) {
-			env[varName] = std::any_cast<unsigned int>(varValue);
-		}
-		else if (varValue.type() == typeid(float)) {
-			env[varName] = std::any_cast<float>(varValue);
-		}
-		else if (varValue.type() == typeid(double)) {
-			env[varName] = std::any_cast<double>(varValue);
-		}
-		else if (varValue.type() == typeid(std::string)) {
-			env[varName] = std::any_cast<std::string>(varValue);
-		}
-		else if (varValue.type() == typeid(std::shared_ptr<Entity>)) {
-			env[varName] = std::any_cast<std::shared_ptr<Entity>>(varValue);
-		}
-		else if (varValue.type() == typeid(Vec2)) {
-			env[varName] = std::any_cast<Vec2>(varValue);
 		}
 	}
+	
 }
 
-void ScriptManager::popEnvironmentVariables(std::unordered_map<std::string, std::any>& toRestore, sol::environment& env)
+void ScriptManager::popEnvironmentVariables(Scriptable& script)
 {
-	for (const auto& pair : toRestore)
-	{
-		const std::string& varName = pair.first;
-		const std::any& varValue = pair.second;
+	sol::table_proxy abyssTableProxy = (script.scriptClass)["ABYSS"];
 
-		// Restore the original value from toRestore back into the Lua environment
-		if (varValue.type() == typeid(int)) {
-			env[varName] = std::any_cast<int>(varValue);
-		}
-		else if (varValue.type() == typeid(unsigned int)) {
-			env[varName] = std::any_cast<unsigned int>(varValue);
-		}
-		else if (varValue.type() == typeid(float)) {
-			env[varName] = std::any_cast<float>(varValue);
-		}
-		else if (varValue.type() == typeid(double)) {
-			env[varName] = std::any_cast<double>(varValue);
-		}
-		else if (varValue.type() == typeid(std::string)) {
-			env[varName] = std::any_cast<std::string>(varValue);
-		}
-		else if (varValue.type() == typeid(std::shared_ptr<Entity>)) {
-			env[varName] = std::any_cast<std::shared_ptr<Entity>>(varValue);
-		}
-		else if (varValue.type() == typeid(Vec2)) {
-			env[varName] = std::any_cast<Vec2>(varValue);
+	if (abyssTableProxy.valid())
+	{
+		sol::table abyssTable = abyssTableProxy;
+		for (const auto& pair : abyssTable)
+		{
+			std::string varName = pair.first.as<std::string>();
+			sol::object varValue = pair.second;
+			//std::cout << "Mapping" << " " << varName << std::endl;
+			// Store the original value in toRestore before overwriting
+			if (varValue.valid())
+			{
+				if (varValue.is<int>()) {
+					script.variableMap[varName] = varValue.as<int>();
+				}
+				else if (varValue.is<unsigned int>()) {
+					script.variableMap[varName] = varValue.as<unsigned int>();
+				}
+				else if (varValue.is<float>()) {
+					script.variableMap[varName] = varValue.as<float>();
+				}
+				else if (varValue.is<double>()) {
+					script.variableMap[varName] = varValue.as<double>();
+				}
+				else if (varValue.is<std::string>()) {
+					script.variableMap[varName] = varValue.as<std::string>();
+				}
+				else if (varValue.is<std::shared_ptr<Entity>>()) {
+					script.variableMap[varName] = varValue.as<std::shared_ptr<Entity>>();
+				}
+				else if (varValue.is<Vec2>()) {
+					script.variableMap[varName] = varValue.as<Vec2>();
+				}
+			}
 		}
 	}
-	// Clear the toRestore map once everything is restored
-	toRestore.clear();
 }
