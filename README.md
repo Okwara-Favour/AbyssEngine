@@ -21,3 +21,10 @@ https://github.com/user-attachments/assets/efa3636a-df75-45a6-a668-0fa3bce944d4
   - Make some folder(e.g AbyssEngine) anywhere in library, then add an **Assets**(must be exact) to the folder
   - Copy **imgui** file configuration settings from project folder
   - Copy the necessary dill files from project folder Assets\Game\SFML\lib
+
+## Libraries Used
+- SFML: Simple and Fast Multimedia Library
+- ImGui: Immediate Mode Graphical User Interface
+- Sol2: Simple Object Layer
+- NFD: Native File Dialog
+- nlohmann json
