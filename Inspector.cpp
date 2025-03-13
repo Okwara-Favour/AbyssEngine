@@ -29,7 +29,7 @@ void Inspector::Update(Editor& editor)
         displayComponents(editor, editor.selectedEntity);
         handleComponents(editor, editor.selectedEntity);
 	}
-    if (editor.selectedPrefab && !editor.selectedEntity)
+    if (editor.selectedPrefab)
     {
         ImGui::Text("ID: %d", editor.selectedPrefab->id());
         ImGui::Separator();

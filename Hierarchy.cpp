@@ -16,6 +16,7 @@ void Hierarchy::Update(Editor& editor)
         // Tab for displaying entities
         if (ImGui::BeginTabItem("Entities"))
         {
+            editor.selectedPrefab = nullptr;
             DisplayEntities(editor);
             ImGui::EndTabItem();
         }
@@ -23,6 +24,7 @@ void Hierarchy::Update(Editor& editor)
         // Tab for displaying prefabs
         if (ImGui::BeginTabItem("Prefabs"))
         {
+            editor.selectedEntity = nullptr;
             DisplayPrefabs(editor); // Assuming you have a DisplayPrefabs function
             ImGui::EndTabItem();
         }
