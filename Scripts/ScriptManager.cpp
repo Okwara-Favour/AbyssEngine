@@ -87,17 +87,30 @@ void ScriptManager::LoadScript(Editor& editor, const std::string& filename, cons
 		{
 			environmentNames.push_back(name);
 		}
-		sol::environment tempEnv(lua, sol::create, lua.globals());
-		allEnvironment[name] = tempEnv;
-		auto result = lua.safe_script(scriptsMap[name], allEnvironment[name]);
-		if (!result.valid()) {
+		sol::load_result compiledScript = lua.load(scriptsMap[name]);
+
+		if (!compiledScript.valid()) {
+			sol::error err = compiledScript;
+			std::stringstream serr;
+			serr << name << " script compilation failed: " << err.what() << std::endl;
+			editor.ConsoleText(serr.str());
+		}
+
+		sol::function compiledFunc = compiledScript;
+		allCompiledScripts[name] = compiledFunc;
+		//sol::environment tempEnv(lua, sol::create, lua.globals());
+		//auto result = compiledFunc.call(tempEnv);
+		//sol::environment tempEnv(lua, sol::create, lua.globals());
+		
+		//auto result = lua.safe_script(scriptsMap[name], allEnvironment[name]);
+		/*if (!result.valid()) {
 			sol::error err = result; // Capture the error
 			editor.ConsoleText("Script: " + name + " environment construction failed");
 		}
 		else
 		{
 			editor.ConsoleText("Script: " + name + " environment construction succeeded");
-		}
+		}*/
 	}
 }
 
@@ -106,9 +119,9 @@ bool ScriptManager::hasScript(const std::string& name)
 	return scriptsDirectoryMap.find(name) != scriptsDirectoryMap.end();
 }
 
-bool ScriptManager::hasEnvironment(const std::string& name)
+bool ScriptManager::hasCompiledScript(const std::string& name)
 {
-	return allEnvironment.find(name) != allEnvironment.end();
+	return allCompiledScripts.find(name) != allCompiledScripts.end();
 }
 
 std::string ScriptManager::removeLuaExt(const std::string& filename)
@@ -146,13 +159,13 @@ void ScriptManager::ResetScript(Editor& editor, const std::string& filename, con
 		editor.ConsoleText("Script: " + name + " not found");
 		return;
 	}
-	else if (!hasEnvironment(name))
+	else if (!hasCompiledScript(name))
 	{
 		editor.ConsoleText("Environment: " + name + " not found, Script is a sub script");
 		return;
 	}
-	auto envIter = allEnvironment.find(name);
-	if (envIter != allEnvironment.end()) {
+	auto envIter = allCompiledScripts.find(name);
+	if (envIter != allCompiledScripts.end()) {
 		for (auto& s : allSOL)
 		{
 			auto it = std::find_if(s.second.begin(), s.second.end(), [&name](const Scriptable& sc) {
@@ -171,7 +184,7 @@ void ScriptManager::ResetScript(Editor& editor, const std::string& filename, con
 			}
 		}
 		(envIter->second).reset();
-		allEnvironment.erase(name);
+		allCompiledScripts.erase(name);
 		lua.collect_garbage();
 	}
 
@@ -185,8 +198,15 @@ void ScriptManager::CompileEntityEnvironment(Editor& editor, std::shared_ptr<Ent
 	{
 		if (!(*s.second.hasMapped))
 		{
+			if (!hasCompiledScript(s.second.name)) {
+				std::stringstream serr;
+				serr << s.second.name << " script compilation data missing: " << std::endl;
+				editor.ConsoleText(serr.str());
+				continue;
+			}
+
 			sol::environment tempEnv(lua, sol::create, lua.globals());
-			auto result = lua.safe_script(scriptsMap[s.second.name], tempEnv);
+			auto result = allCompiledScripts[s.second.name].call(tempEnv);
 			if (!result.valid()) {
 				sol::error err = result; // Capture the error
 				editor.ConsoleText("Script: " + s.second.name + " environment construction failed for " + std::to_string(entity->m_id));
@@ -384,12 +404,12 @@ void ScriptManager::Close()
 			}
 		}
 	}
-	for (auto& e : allEnvironment)
+	for (auto& e : allCompiledScripts)
 	{
 		if(e.second) e.second.reset();
 	}
 	allSOL.clear();
-	allEnvironment.clear();
+	allCompiledScripts.clear();
 	allEntityEnvironment.clear();
 
 	scriptsMap.clear();
@@ -428,7 +448,7 @@ void ScriptManager::ResolveMissingSharedSOL(Editor& editor)
 					allSOL[entity->id()].push_back(sc);
 
 					sol::environment tempEnv(lua, sol::create, lua.globals());
-					auto result = lua.safe_script(scriptsMap[s.second.name], tempEnv);
+					auto result = allCompiledScripts[s.second.name].call(tempEnv);
 					if (!result.valid()) {
 						sol::error err = result; // Capture the error
 						editor.ConsoleText("Script: " + s.second.name + " environment construction failed for " + std::to_string(entity->m_id));
@@ -454,7 +474,7 @@ void ScriptManager::ResolveMissingSharedSOL(Editor& editor)
 				allSOL[entity->id()].push_back(sc);
 
 				sol::environment tempEnv(lua, sol::create, lua.globals());
-				auto result = lua.safe_script(scriptsMap[s.second.name], tempEnv);
+				auto result = allCompiledScripts[s.second.name].call(tempEnv);
 				if (!result.valid()) {
 					sol::error err = result; // Capture the error
 					editor.ConsoleText("Script: " + s.second.name + " environment re-construction failed for " + std::to_string(entity->m_id));

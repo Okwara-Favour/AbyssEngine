@@ -390,7 +390,7 @@ void Inspector::displayComponents(Editor& editor, std::shared_ptr<Entity>& selec
     {
         for (auto& script : selected->m_scriptables)
         {
-            if (editor.scriptManager.hasEnvironment(script.first))
+            if (editor.scriptManager.hasCompiledScript(script.first))
             {
                 if (ImGui::CollapsingHeader(script.first.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
                 {

@@ -965,7 +965,7 @@ void Editor::SavePrefabData()
 
 	for (auto& s : scriptManager.scriptsDirectoryMap)
 	{
-		if (scriptManager.hasEnvironment(s.first))
+		if (scriptManager.hasCompiledScript(s.first))
 		{
 			nlohmann::json scriptField;
 			scriptField["NAME"] = s.first + ".lua";
